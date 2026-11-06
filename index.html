@@ -8,6 +8,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- GSAP removed — scroll-driven video uses native scroll listener -->
   <style>
+    html { scroll-behavior: smooth; }
     body { overflow-x: hidden; font-family: system-ui, -apple-system, sans-serif; }
 
     /* Scrollytelling canvas section */
@@ -18,6 +19,7 @@
       position: sticky;
       top: 4rem; /* below navbar */
       height: calc(100vh - 4rem);
+      height: calc(100dvh - 4rem);
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -231,9 +233,9 @@
       ];
       const dots = document.querySelectorAll("#scrolly-progress span");
 
-      // Generate filename for a given frame index (1 to 302)
+      // Generate filename for a given frame index (1 to 302) in root folder
       function frameSrc(index) {
-        return `frames/frame_${String(index).padStart(4, "0")}.webp`;
+        return `frame_${String(index).padStart(4, "0")}.webp`;
       }
 
       // Preload images into memory
@@ -245,7 +247,9 @@
         img.src = frameSrc(i);
         img.onload = () => {
           framesLoaded++;
-          if (i === 1) renderCanvas(0); // draw initial frame immediately
+          if (lastRenderedFrame === -1 || i === 1) {
+            renderCanvas(0);
+          }
         };
         images[i - 1] = img;
       }
@@ -291,7 +295,7 @@
       }
 
       // Draw image onto canvas with cover-fit (aspect-ratio preserving)
-      let lastRenderedFrame = 0;
+      let lastRenderedFrame = -1;
       function renderCanvas(frameIdx) {
         const img = getLoadedFrame(frameIdx);
         if (!img || !img.complete || img.naturalWidth === 0 || canvasW === 0 || canvasH === 0) return;
