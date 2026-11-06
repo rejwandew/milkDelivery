@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PureDrop — Farm to Doorstep Milk Delivery</title>
+  <!-- Tailwind CSS & GSAP ScrollTrigger via CDN (Zero npm install needed) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- GSAP removed — scroll-driven video uses native scroll listener -->
+  <style>
+    body { overflow-x: hidden; font-family: system-ui, -apple-system, sans-serif; }
+
+    /* Scrollytelling canvas section */
+    #scrolly-wrapper {
+      position: relative;
+    }
+    #scrolly-wrapper .sticky-container {
+      position: sticky;
+      top: 4rem; /* below navbar */
+      height: calc(100vh - 4rem);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background-color: #000;
+    }
+    #scrolly-wrapper canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      pointer-events: none;
+    }
+
+    /* Overlay text panels */
+    .scrolly-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 2rem 1.5rem 3rem;
+      background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.2) 50%, transparent 100%);
+      color: #fff;
+      opacity: 0;
+      transform: translateY(12px) translateZ(0);
+      transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: none;
+      will-change: opacity, transform;
+    }
+    .scrolly-overlay.active {
+      opacity: 1;
+      transform: translateY(0) translateZ(0);
+    }
+    .scrolly-overlay .badge {
+      display: inline-block;
+      background: rgba(15, 23, 42, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      font-size: 0.65rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 0.35rem 0.85rem;
+      border-radius: 9999px;
+      margin-bottom: 0.5rem;
+      width: fit-content;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+    .scrolly-overlay h2 {
+      font-size: clamp(1.5rem, 4vw, 2.75rem);
+      font-weight: 900;
+      line-height: 1.15;
+      margin-bottom: 0.35rem;
+    }
+    .scrolly-overlay p {
+      font-size: clamp(0.85rem, 1.8vw, 1.05rem);
+      opacity: 0.85;
+      max-width: 36rem;
+    }
+
+    /* Progress dots */
+    #scrolly-progress {
+      position: absolute;
+      bottom: 1.25rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 0.75rem;
+      z-index: 10;
+      padding: 0.4rem 0.8rem;
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 9999px;
+    }
+    #scrolly-progress span {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.4);
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    #scrolly-progress span:hover {
+      background: rgba(255,255,255,0.8);
+      transform: scale(1.2);
+    }
+    #scrolly-progress span.active {
+      background: #38BDF8;
+      transform: scale(1.4);
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.8);
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+
+  <!-- Top Navbar -->
+  <header class="fixed top-0 left-0 right-0 h-16 bg-white/90 backdrop-blur border-b border-slate-200 z-50 px-6 md:px-16 flex items-center justify-between">
+    <div class="text-xl font-extrabold tracking-tight text-sky-600">🥛 PureDrop<span class="text-slate-900">Dairy</span></div>
+    <nav class="hidden md:flex gap-8 text-sm font-semibold text-slate-600">
+      <a href="#scrolly-wrapper" class="hover:text-sky-600">The Morning Journey</a>
+      <a href="#products" class="hover:text-sky-600">Fresh Milk & Ghee</a>
+      <a href="#plans" class="hover:text-sky-600">Daily Subscription</a>
+    </nav>
+    <a href="#plans" class="bg-sky-600 hover:bg-sky-700 text-white text-sm font-bold px-5 py-2 rounded-full transition">Order Morning Trial</a>
+  </header>
+
+  <!-- 1. SCROLLYTELLING CANVAS SECTION -->
+  <section id="scrolly-wrapper" class="relative" style="height: 450vh;">
+    <div class="sticky-container">
+
+      <!-- High-performance Canvas Image Sequence (Apple/Sony Standard) -->
+      <canvas id="scrolly-canvas"></canvas>
+
+      <!-- Stage overlays -->
+      <div id="overlay-0" class="scrolly-overlay active">
+        <span class="badge">STAGE 01 / 03 • 4:30 AM AT THE DAIRY FARM</span>
+        <h2>Freshly Milked at Dawn</h2>
+        <p>Every morning before sunrise, our milkmen gently collect fresh milk in sanitized stainless steel pails.</p>
+      </div>
+      <div id="overlay-1" class="scrolly-overlay">
+        <span class="badge">STAGE 02 / 03 • 5:15 AM COLD-CHAIN LOGISTICS</span>
+        <h2>Packed into Chilled Delivery Trucks</h2>
+        <p>Within 45 minutes, the milk is bottled in glass and loaded into 4°C insulated trucks to lock in purity.</p>
+      </div>
+      <div id="overlay-2" class="scrolly-overlay">
+        <span class="badge">STAGE 03 / 03 • 6:45 AM DOORSTEP HANDOVER</span>
+        <h2>Handed to You by Our Delivery Partner</h2>
+        <p>Right before your morning tea, our delivery boy hands the chilled bottle directly to you at your door.</p>
+      </div>
+
+      <!-- Progress dots -->
+      <div id="scrolly-progress">
+        <span class="active"></span>
+        <span></span>
+        <span></span>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 2. NORMAL SCROLLING WEBSITE SECTIONS BELOW -->
+  <main class="bg-white relative z-10">
+    
+    <!-- Products Grid -->
+    <section id="products" class="py-24 px-6 md:px-16 max-w-6xl mx-auto">
+      <div class="text-center max-w-2xl mx-auto mb-16">
+        <span class="text-emerald-600 font-extrabold text-xs tracking-widest uppercase">100% Raw & Unadulterated</span>
+        <h2 class="text-3xl md:text-4xl font-black mt-2 mb-3">Delivered Before 7:00 AM Daily</h2>
+        <p class="text-slate-600">Now that the scrollytelling animation is complete, the rest of the page scrolls normally like a standard e-commerce store.</p>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-8">
+        <div class="bg-slate-50 border border-slate-200 rounded-3xl p-8 text-center hover:-translate-y-1.5 transition">
+          <div class="text-5xl mb-4">🥛</div>
+          <h3 class="text-xl font-bold mb-2">Farm Fresh A2 Cow Milk</h3>
+          <p class="text-slate-600 text-sm mb-6">Chilled to 4°C within 30 minutes of milking and sealed in glass bottles.</p>
+          <div class="text-2xl font-black mb-6">৳120 <span class="text-sm font-normal text-slate-500">/ Liter</span></div>
+          <button class="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 rounded-xl">Subscribe Daily</button>
+        </div>
+
+        <div class="bg-sky-50 border-2 border-sky-600 rounded-3xl p-8 text-center hover:-translate-y-1.5 transition relative">
+          <span class="absolute -top-3 left-1/2 -translate-x-1/2 bg-sky-600 text-white text-xs font-bold px-3 py-1 rounded-full">Bestseller</span>
+          <div class="text-5xl mb-4">🍯</div>
+          <h3 class="text-xl font-bold mb-2">Cultured Desi Ghee</h3>
+          <p class="text-slate-600 text-sm mb-6">Slow-churned from grass-fed curd using the traditional bilona method.</p>
+          <div class="text-2xl font-black mb-6">৳1,450 <span class="text-sm font-normal text-slate-500">/ 500g Jar</span></div>
+          <button class="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 rounded-xl">Add to Morning Delivery</button>
+        </div>
+
+        <div class="bg-slate-50 border border-slate-200 rounded-3xl p-8 text-center hover:-translate-y-1.5 transition">
+          <div class="text-5xl mb-4">🥣</div>
+          <h3 class="text-xl font-bold mb-2">Artisanal Clay-Pot Doi</h3>
+          <p class="text-slate-600 text-sm mb-6">Thick, probiotic-rich sweet curd set fresh overnight in earthen pots.</p>
+          <div class="text-2xl font-black mb-6">৳220 <span class="text-sm font-normal text-slate-500">/ 500g Pot</span></div>
+          <button class="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 rounded-xl">Add to Morning Delivery</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Subscription CTA -->
+    <section id="plans" class="py-16 px-6 md:px-16 max-w-6xl mx-auto mb-16">
+      <div class="bg-slate-900 text-white rounded-3xl p-10 md:p-14 flex flex-col md:flex-row items-center justify-between gap-8">
+        <div>
+          <h3 class="text-2xl md:text-3xl font-black mb-2">Try Our 7-Day Morning Trial Pack</h3>
+          <p class="text-slate-300">Pause anytime before 10 PM • Zero delivery charges • Sanitized glass bottle return</p>
+        </div>
+        <button class="bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black px-8 py-4 rounded-2xl shrink-0">
+          Start 7-Day Trial →
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="bg-slate-950 text-slate-400 text-center py-8 text-sm">
+    © 2026 PureDrop Dairy Delivery • Fresh from pasture to doorstep
+  </footer>
+
+  <!-- Canvas Image Sequence Scrollytelling Engine (Industry Gold Standard) -->
+  <script>
+    (function () {
+      const FRAME_COUNT = 302;
+      const canvas = document.getElementById("scrolly-canvas");
+      const ctx = canvas.getContext("2d", { alpha: false }); // alpha: false speeds up compositing
+      const wrapper = document.getElementById("scrolly-wrapper");
+      const overlays = [
+        document.getElementById("overlay-0"),
+        document.getElementById("overlay-1"),
+        document.getElementById("overlay-2"),
+      ];
+      const dots = document.querySelectorAll("#scrolly-progress span");
+
+      // Generate filename for a given frame index (1 to 302)
+      function frameSrc(index) {
+        return `frames/frame_${String(index).padStart(4, "0")}.webp`;
+      }
+
+      // Preload images into memory
+      const images = new Array(FRAME_COUNT);
+      let framesLoaded = 0;
+
+      for (let i = 1; i <= FRAME_COUNT; i++) {
+        const img = new Image();
+        img.src = frameSrc(i);
+        img.onload = () => {
+          framesLoaded++;
+          if (i === 1) renderCanvas(0); // draw initial frame immediately
+        };
+        images[i - 1] = img;
+      }
+
+      // Helper: get the closest available loaded frame to prevent any blank flicker
+      function getLoadedFrame(targetIdx) {
+        if (images[targetIdx] && images[targetIdx].complete && images[targetIdx].naturalWidth > 0) {
+          return images[targetIdx];
+        }
+        for (let offset = 1; offset < FRAME_COUNT; offset++) {
+          const prev = targetIdx - offset;
+          if (prev >= 0 && images[prev] && images[prev].complete && images[prev].naturalWidth > 0) {
+            return images[prev];
+          }
+          const next = targetIdx + offset;
+          if (next < FRAME_COUNT && images[next] && images[next].complete && images[next].naturalWidth > 0) {
+            return images[next];
+          }
+        }
+        return images[0];
+      }
+
+      // Handle retina displays and resize
+      let canvasW = 0;
+      let canvasH = 0;
+      let wrapperTop = 0;
+      let maxScroll = 0;
+
+      function resizeCanvas() {
+        const dpr = Math.min(window.devicePixelRatio || 1, 2); // cap at 2 for performance
+        const rect = canvas.getBoundingClientRect();
+        canvasW = Math.round(rect.width * dpr);
+        canvasH = Math.round(rect.height * dpr);
+        canvas.width = canvasW;
+        canvas.height = canvasH;
+
+        const wrapRect = wrapper.getBoundingClientRect();
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        wrapperTop = wrapRect.top + scrollTop;
+        maxScroll = wrapper.offsetHeight - window.innerHeight;
+
+        renderCanvas(lastRenderedFrame);
+      }
+
+      // Draw image onto canvas with cover-fit (aspect-ratio preserving)
+      let lastRenderedFrame = 0;
+      function renderCanvas(frameIdx) {
+        const img = getLoadedFrame(frameIdx);
+        if (!img || !img.complete || img.naturalWidth === 0 || canvasW === 0 || canvasH === 0) return;
+
+        const imgW = img.naturalWidth;
+        const imgH = img.naturalHeight;
+        const ratio = Math.max(canvasW / imgW, canvasH / imgH);
+        const drawW = imgW * ratio;
+        const drawH = imgH * ratio;
+        const drawX = (canvasW - drawW) / 2;
+        const drawY = (canvasH - drawH) / 2;
+
+        ctx.drawImage(img, 0, 0, imgW, imgH, drawX, drawY, drawW, drawH);
+        lastRenderedFrame = frameIdx;
+      }
+
+      // Scroll Tracking with LERP Momentum
+      let targetProgress = 0;
+      let currentProgress = 0;
+      let activeIndex = 0;
+
+      function onScroll() {
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        const scrolled = Math.min(Math.max(scrollTop - wrapperTop, 0), maxScroll);
+        targetProgress = maxScroll > 0 ? scrolled / maxScroll : 0;
+      }
+
+      window.addEventListener("scroll", onScroll, { passive: true });
+      window.addEventListener("resize", () => {
+        resizeCanvas();
+        onScroll();
+      }, { passive: true });
+
+      // Click dots to smoothly jump to a story stage
+      dots.forEach((dot, idx) => {
+        dot.addEventListener("click", () => {
+          const targetY = wrapperTop + (idx / 2) * maxScroll;
+          window.scrollTo({ top: targetY, behavior: "smooth" });
+        });
+      });
+
+      // 60/120 FPS continuous render loop
+      function loop() {
+        const diff = targetProgress - currentProgress;
+        if (Math.abs(diff) < 0.0001) {
+          currentProgress = targetProgress;
+        } else {
+          // Responsive 0.15 smoothing factor for instantaneous response with zero lag
+          currentProgress += diff * 0.15;
+        }
+
+        const frameIdx = Math.min(Math.floor(currentProgress * FRAME_COUNT), FRAME_COUNT - 1);
+        if (frameIdx !== lastRenderedFrame) {
+          renderCanvas(frameIdx);
+        }
+
+        // Synchronize story stages and indicators
+        let newIndex = 0;
+        if (currentProgress >= 0.33 && currentProgress < 0.67) newIndex = 1;
+        else if (currentProgress >= 0.67) newIndex = 2;
+
+        if (newIndex !== activeIndex) {
+          activeIndex = newIndex;
+          overlays.forEach((ol, i) => {
+            ol.classList.toggle("active", i === activeIndex);
+          });
+          dots.forEach((dot, i) => {
+            dot.classList.toggle("active", i === activeIndex);
+          });
+        }
+
+        requestAnimationFrame(loop);
+      }
+
+      // Initialize
+      resizeCanvas();
+      onScroll();
+      currentProgress = targetProgress;
+      renderCanvas(0);
+      requestAnimationFrame(loop);
+    })();
+  </script>
+</body>
+</html>
