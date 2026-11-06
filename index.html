@@ -25,7 +25,7 @@
       align-items: center;
       justify-content: center;
       overflow: hidden;
-      background-color: #000;
+      background-color: #030712;
     }
     #scrolly-wrapper canvas {
       position: absolute;
@@ -43,8 +43,8 @@
       display: flex;
       flex-direction: column;
       justify-content: flex-end;
-      padding: 2rem 1.5rem 3rem;
-      background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.2) 50%, transparent 100%);
+      padding: 2.5rem 2rem 3.5rem;
+      background: linear-gradient(to top, rgba(3,7,18,0.92) 0%, rgba(3,7,18,0.4) 45%, transparent 100%);
       color: #fff;
       opacity: 0;
       transform: translateY(12px) translateZ(0);
@@ -58,7 +58,7 @@
     }
     .scrolly-overlay .badge {
       display: inline-block;
-      background: rgba(15, 23, 42, 0.75);
+      background: rgba(15, 23, 42, 0.85);
       border: 1px solid rgba(255, 255, 255, 0.25);
       font-size: 0.65rem;
       font-weight: 800;
@@ -71,7 +71,7 @@
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     }
     .scrolly-overlay h2 {
-      font-size: clamp(1.5rem, 4vw, 2.75rem);
+      font-size: clamp(1.4rem, 4vw, 2.75rem);
       font-weight: 900;
       line-height: 1.15;
       margin-bottom: 0.35rem;
@@ -80,6 +80,24 @@
       font-size: clamp(0.85rem, 1.8vw, 1.05rem);
       opacity: 0.85;
       max-width: 36rem;
+    }
+
+    /* Mobile portrait adaptations: keeps 100% of landscape video visible with text below */
+    @media (max-width: 768px) and (orientation: portrait), (max-aspect-ratio: 13/10) {
+      .scrolly-overlay {
+        padding: 1rem 1.25rem 4rem;
+        background: linear-gradient(to top, rgba(3, 7, 18, 0.98) 0%, rgba(3, 7, 18, 0.9) 38%, rgba(3, 7, 18, 0.25) 58%, transparent 100%);
+      }
+      .scrolly-overlay h2 {
+        font-size: clamp(1.2rem, 5vw, 1.65rem);
+      }
+      .scrolly-overlay p {
+        font-size: 0.825rem;
+        line-height: 1.4;
+      }
+      #scrolly-progress {
+        bottom: 1rem;
+      }
     }
 
     /* Progress dots */
@@ -130,6 +148,12 @@
   <!-- 1. SCROLLYTELLING CANVAS SECTION -->
   <section id="scrolly-wrapper" class="relative" style="height: 450vh;">
     <div class="sticky-container">
+
+      <!-- View Mode Toggle (Mobile Only) -->
+      <button id="view-mode-btn" class="absolute top-3 right-3 z-30 flex items-center gap-1.5 bg-slate-900/80 backdrop-blur border border-white/20 text-white/90 text-xs font-semibold px-3 py-1.5 rounded-full shadow-lg hover:bg-slate-800 transition active:scale-95 md:hidden" aria-label="Toggle Fit or Fill view">
+        <span id="view-mode-icon">📐</span>
+        <span id="view-mode-text">Fit View</span>
+      </button>
 
       <!-- High-performance Canvas Image Sequence (Apple/Sony Standard) -->
       <canvas id="scrolly-canvas"></canvas>
@@ -294,7 +318,29 @@
         renderCanvas(lastRenderedFrame);
       }
 
-      // Draw image onto canvas with cover-fit (aspect-ratio preserving)
+      // View Mode Toggle for Mobile
+      let fitMode = "auto"; // "auto" = fit on portrait, cover on desktop/landscape
+      const viewModeBtn = document.getElementById("view-mode-btn");
+      const viewModeText = document.getElementById("view-mode-text");
+      const viewModeIcon = document.getElementById("view-mode-icon");
+
+      if (viewModeBtn) {
+        viewModeBtn.addEventListener("click", () => {
+          if (fitMode === "cover") {
+            fitMode = "contain";
+            viewModeText.textContent = "Fit View";
+            viewModeIcon.textContent = "📐";
+          } else {
+            fitMode = "cover";
+            viewModeText.textContent = "Fill View";
+            viewModeIcon.textContent = "🔍";
+          }
+          lastRenderedFrame = -1;
+          renderCanvas(Math.min(Math.floor(currentProgress * FRAME_COUNT), FRAME_COUNT - 1));
+        });
+      }
+
+      // Draw image onto canvas with adaptive responsive scaling
       let lastRenderedFrame = -1;
       function renderCanvas(frameIdx) {
         const img = getLoadedFrame(frameIdx);
@@ -302,12 +348,36 @@
 
         const imgW = img.naturalWidth;
         const imgH = img.naturalHeight;
-        const ratio = Math.max(canvasW / imgW, canvasH / imgH);
-        const drawW = imgW * ratio;
-        const drawH = imgH * ratio;
-        const drawX = (canvasW - drawW) / 2;
-        const drawY = (canvasH - drawH) / 2;
 
+        // Detect if viewport is portrait (typical on phones held vertically)
+        const isPortrait = (canvasW / canvasH) < 1.15;
+        const shouldContain = fitMode === "contain" || (fitMode === "auto" && isPortrait);
+
+        let drawW, drawH, drawX, drawY;
+
+        if (shouldContain) {
+          // Fit entire 16:9 widescreen video so 100% of left and right content is visible (zero cropping)
+          const ratio = Math.min(canvasW / imgW, (canvasH * 0.58) / imgH);
+          drawW = Math.round(imgW * ratio);
+          drawH = Math.round(imgH * ratio);
+          drawX = Math.round((canvasW - drawW) / 2);
+          // Position video gracefully in upper area so story text sits cleanly below without overlap
+          const targetY = Math.round(canvasH * 0.35);
+          drawY = Math.max(12, Math.round(targetY - (drawH / 2)));
+        } else {
+          // Edge-to-edge full-bleed cover (default on desktop and landscape)
+          const ratio = Math.max(canvasW / imgW, canvasH / imgH);
+          drawW = Math.round(imgW * ratio);
+          drawH = Math.round(imgH * ratio);
+          drawX = Math.round((canvasW - drawW) / 2);
+          drawY = Math.round((canvasH - drawH) / 2);
+        }
+
+        // Fill background with deep slate black
+        ctx.fillStyle = "#030712";
+        ctx.fillRect(0, 0, canvasW, canvasH);
+
+        // Draw image frame
         ctx.drawImage(img, 0, 0, imgW, imgH, drawX, drawY, drawW, drawH);
         lastRenderedFrame = frameIdx;
       }
@@ -327,6 +397,12 @@
       window.addEventListener("resize", () => {
         resizeCanvas();
         onScroll();
+      }, { passive: true });
+      window.addEventListener("orientationchange", () => {
+        setTimeout(() => {
+          resizeCanvas();
+          onScroll();
+        }, 150);
       }, { passive: true });
 
       // Click dots to smoothly jump to a story stage
