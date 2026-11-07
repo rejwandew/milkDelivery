@@ -25,7 +25,7 @@
       align-items: center;
       justify-content: center;
       overflow: hidden;
-      background-color: #030712;
+      background-color: #1a1510;
     }
     #scrolly-wrapper canvas {
       position: absolute;
@@ -43,8 +43,9 @@
       display: flex;
       flex-direction: column;
       justify-content: flex-end;
+      align-items: center;
       padding: 2.5rem 2rem 3.5rem;
-      background: linear-gradient(to top, rgba(3,7,18,0.92) 0%, rgba(3,7,18,0.4) 45%, transparent 100%);
+      background: linear-gradient(to top, rgba(3,7,18,0.7) 0%, rgba(3,7,18,0.2) 30%, transparent 60%);
       color: #fff;
       opacity: 0;
       transform: translateY(12px) translateZ(0);
@@ -56,7 +57,18 @@
       opacity: 1;
       transform: translateY(0) translateZ(0);
     }
-    .scrolly-overlay .badge {
+    .scrolly-card {
+      width: 100%;
+      max-width: 38rem;
+      background: rgba(15, 23, 42, 0.72);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 1.5rem;
+      padding: 1.25rem 1.5rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    }
+    .scrolly-card .badge {
       display: inline-block;
       background: rgba(15, 23, 42, 0.85);
       border: 1px solid rgba(255, 255, 255, 0.25);
@@ -70,33 +82,37 @@
       width: fit-content;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     }
-    .scrolly-overlay h2 {
-      font-size: clamp(1.4rem, 4vw, 2.75rem);
+    .scrolly-card h2 {
+      font-size: clamp(1.35rem, 3.8vw, 2.5rem);
       font-weight: 900;
       line-height: 1.15;
       margin-bottom: 0.35rem;
     }
-    .scrolly-overlay p {
-      font-size: clamp(0.85rem, 1.8vw, 1.05rem);
+    .scrolly-card p {
+      font-size: clamp(0.825rem, 1.8vw, 1.05rem);
       opacity: 0.85;
       max-width: 36rem;
     }
 
-    /* Mobile portrait adaptations: keeps 100% of landscape video visible with text below */
+    /* Mobile portrait adaptations */
     @media (max-width: 768px) and (orientation: portrait), (max-aspect-ratio: 13/10) {
       .scrolly-overlay {
-        padding: 1rem 1.25rem 4rem;
-        background: linear-gradient(to top, rgba(3, 7, 18, 0.98) 0%, rgba(3, 7, 18, 0.9) 38%, rgba(3, 7, 18, 0.25) 58%, transparent 100%);
+        padding: 0.75rem 1rem 3.5rem;
+        background: linear-gradient(to top, rgba(3,7,18,0.7) 0%, rgba(3,7,18,0.2) 30%, transparent 60%);
       }
-      .scrolly-overlay h2 {
-        font-size: clamp(1.2rem, 5vw, 1.65rem);
+      .scrolly-card {
+        padding: 1rem 1.15rem;
+        border-radius: 1.25rem;
       }
-      .scrolly-overlay p {
-        font-size: 0.825rem;
+      .scrolly-card h2 {
+        font-size: clamp(1.15rem, 4.8vw, 1.55rem);
+      }
+      .scrolly-card p {
+        font-size: 0.8rem;
         line-height: 1.4;
       }
       #scrolly-progress {
-        bottom: 1rem;
+        bottom: 0.9rem;
       }
     }
 
@@ -149,30 +165,30 @@
   <section id="scrolly-wrapper" class="relative" style="height: 450vh;">
     <div class="sticky-container">
 
-      <!-- View Mode Toggle (Mobile Only) -->
-      <button id="view-mode-btn" class="absolute top-3 right-3 z-30 flex items-center gap-1.5 bg-slate-900/80 backdrop-blur border border-white/20 text-white/90 text-xs font-semibold px-3 py-1.5 rounded-full shadow-lg hover:bg-slate-800 transition active:scale-95 md:hidden" aria-label="Toggle Fit or Fill view">
-        <span id="view-mode-icon">📐</span>
-        <span id="view-mode-text">Fit View</span>
-      </button>
-
       <!-- High-performance Canvas Image Sequence (Apple/Sony Standard) -->
       <canvas id="scrolly-canvas"></canvas>
 
       <!-- Stage overlays -->
       <div id="overlay-0" class="scrolly-overlay active">
-        <span class="badge">STAGE 01 / 03 • 4:30 AM AT THE DAIRY FARM</span>
-        <h2>Freshly Milked at Dawn</h2>
-        <p>Every morning before sunrise, our milkmen gently collect fresh milk in sanitized stainless steel pails.</p>
+        <div class="scrolly-card">
+          <span class="badge">STAGE 01 / 03 • 4:30 AM AT THE DAIRY FARM</span>
+          <h2>Freshly Milked at Dawn</h2>
+          <p>Every morning before sunrise, our milkmen gently collect fresh milk in sanitized stainless steel pails.</p>
+        </div>
       </div>
       <div id="overlay-1" class="scrolly-overlay">
-        <span class="badge">STAGE 02 / 03 • 5:15 AM COLD-CHAIN LOGISTICS</span>
-        <h2>Packed into Chilled Delivery Trucks</h2>
-        <p>Within 45 minutes, the milk is bottled in glass and loaded into 4°C insulated trucks to lock in purity.</p>
+        <div class="scrolly-card">
+          <span class="badge">STAGE 02 / 03 • 5:15 AM COLD-CHAIN LOGISTICS</span>
+          <h2>Packed into Chilled Delivery Trucks</h2>
+          <p>Within 45 minutes, the milk is bottled in glass and loaded into 4°C insulated trucks to lock in purity.</p>
+        </div>
       </div>
       <div id="overlay-2" class="scrolly-overlay">
-        <span class="badge">STAGE 03 / 03 • 6:45 AM DOORSTEP HANDOVER</span>
-        <h2>Handed to You by Our Delivery Partner</h2>
-        <p>Right before your morning tea, our delivery boy hands the chilled bottle directly to you at your door.</p>
+        <div class="scrolly-card">
+          <span class="badge">STAGE 03 / 03 • 6:45 AM DOORSTEP HANDOVER</span>
+          <h2>Handed to You by Our Delivery Partner</h2>
+          <p>Right before your morning tea, our delivery boy hands the chilled bottle directly to you at your door.</p>
+        </div>
       </div>
 
       <!-- Progress dots -->
@@ -318,29 +334,7 @@
         renderCanvas(lastRenderedFrame);
       }
 
-      // View Mode Toggle for Mobile
-      let fitMode = "auto"; // "auto" = fit on portrait, cover on desktop/landscape
-      const viewModeBtn = document.getElementById("view-mode-btn");
-      const viewModeText = document.getElementById("view-mode-text");
-      const viewModeIcon = document.getElementById("view-mode-icon");
-
-      if (viewModeBtn) {
-        viewModeBtn.addEventListener("click", () => {
-          if (fitMode === "cover") {
-            fitMode = "contain";
-            viewModeText.textContent = "Fit View";
-            viewModeIcon.textContent = "📐";
-          } else {
-            fitMode = "cover";
-            viewModeText.textContent = "Fill View";
-            viewModeIcon.textContent = "🔍";
-          }
-          lastRenderedFrame = -1;
-          renderCanvas(Math.min(Math.floor(currentProgress * FRAME_COUNT), FRAME_COUNT - 1));
-        });
-      }
-
-      // Draw image onto canvas with adaptive responsive scaling
+      // Draw image onto canvas with edge-to-edge cover (no black bars on any device)
       let lastRenderedFrame = -1;
       function renderCanvas(frameIdx) {
         const img = getLoadedFrame(frameIdx);
@@ -348,36 +342,12 @@
 
         const imgW = img.naturalWidth;
         const imgH = img.naturalHeight;
+        const ratio = Math.max(canvasW / imgW, canvasH / imgH);
+        const drawW = Math.round(imgW * ratio);
+        const drawH = Math.round(imgH * ratio);
+        const drawX = Math.round((canvasW - drawW) / 2);
+        const drawY = Math.round((canvasH - drawH) / 2);
 
-        // Detect if viewport is portrait (typical on phones held vertically)
-        const isPortrait = (canvasW / canvasH) < 1.15;
-        const shouldContain = fitMode === "contain" || (fitMode === "auto" && isPortrait);
-
-        let drawW, drawH, drawX, drawY;
-
-        if (shouldContain) {
-          // Fit entire 16:9 widescreen video so 100% of left and right content is visible (zero cropping)
-          const ratio = Math.min(canvasW / imgW, (canvasH * 0.58) / imgH);
-          drawW = Math.round(imgW * ratio);
-          drawH = Math.round(imgH * ratio);
-          drawX = Math.round((canvasW - drawW) / 2);
-          // Position video gracefully in upper area so story text sits cleanly below without overlap
-          const targetY = Math.round(canvasH * 0.35);
-          drawY = Math.max(12, Math.round(targetY - (drawH / 2)));
-        } else {
-          // Edge-to-edge full-bleed cover (default on desktop and landscape)
-          const ratio = Math.max(canvasW / imgW, canvasH / imgH);
-          drawW = Math.round(imgW * ratio);
-          drawH = Math.round(imgH * ratio);
-          drawX = Math.round((canvasW - drawW) / 2);
-          drawY = Math.round((canvasH - drawH) / 2);
-        }
-
-        // Fill background with deep slate black
-        ctx.fillStyle = "#030712";
-        ctx.fillRect(0, 0, canvasW, canvasH);
-
-        // Draw image frame
         ctx.drawImage(img, 0, 0, imgW, imgH, drawX, drawY, drawW, drawH);
         lastRenderedFrame = frameIdx;
       }
