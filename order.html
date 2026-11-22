@@ -410,35 +410,46 @@
     let rtdb = null;
     let auth = null;
 
+    // PureDrop Firebase Project Credentials
+    const FIREBASE_APP_CONFIG = (window.FIREBASE_CONFIG && window.isFirebaseConfigured && window.isFirebaseConfigured()) 
+      ? window.FIREBASE_CONFIG 
+      : {
+          apiKey: "AIzaSyAX9XrBuxDe--SdegCg46FeZIAauZwYfvk",
+          authDomain: "puredrop-dairy-6b4a9.firebaseapp.com",
+          projectId: "puredrop-dairy-6b4a9",
+          storageBucket: "puredrop-dairy-6b4a9.firebasestorage.app",
+          messagingSenderId: "825921705426",
+          appId: "1:825921705426:web:25df4cbd3836c935a0a40b",
+          measurementId: "G-SYRSEKKCMV"
+        };
+
     // Initialize Firebase
     function initFirebase() {
-      if (window.isFirebaseConfigured && window.isFirebaseConfigured()) {
-        try {
-          if (!firebase.apps.length) {
-            firebase.initializeApp(window.FIREBASE_CONFIG);
-          }
-          auth = firebase.auth();
-          try { db = firebase.firestore(); } catch (e) { console.warn("Firestore init:", e); }
-          try { rtdb = firebase.database(); } catch (e) { console.warn("Realtime DB init:", e); }
-          firebaseInitialized = true;
-
-          // Listen for auth state changes
-          auth.onAuthStateChanged((user) => {
-            if (user) {
-              handleUserAuthenticated({
-                uid: user.uid,
-                displayName: user.displayName || "Customer",
-                email: user.email || "",
-                photoURL: user.photoURL || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop"
-              });
-            } else {
-              handleUserSignedOut();
-            }
-          });
-
-        } catch (e) {
-          console.error("Firebase initialization error:", e);
+      try {
+        if (!firebase.apps.length) {
+          firebase.initializeApp(FIREBASE_APP_CONFIG);
         }
+        auth = firebase.auth();
+        try { db = firebase.firestore(); } catch (e) { console.warn("Firestore init:", e); }
+        try { rtdb = firebase.database(); } catch (e) { console.warn("Realtime DB init:", e); }
+        firebaseInitialized = true;
+
+        // Listen for auth state changes
+        auth.onAuthStateChanged((user) => {
+          if (user) {
+            handleUserAuthenticated({
+              uid: user.uid,
+              displayName: user.displayName || "Customer",
+              email: user.email || "",
+              photoURL: user.photoURL || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop"
+            });
+          } else {
+            handleUserSignedOut();
+          }
+        });
+
+      } catch (e) {
+        console.error("Firebase initialization error:", e);
       }
     }
 
