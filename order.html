@@ -47,18 +47,6 @@
     </div>
   </header>
 
-  <!-- Firebase Setup Warning Banner (if keys are not configured yet) -->
-  <div id="firebase-notice" class="hidden bg-amber-500/10 border-b border-amber-500/30 px-6 py-3 text-xs md:text-sm text-amber-300">
-    <div class="max-w-4xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-      <div class="flex items-center gap-2">
-        <span class="text-base">⚠️</span>
-        <span>Firebase keys are currently in <strong>Demo Mode</strong>. You can test the full flow, Google Sign-in simulation, and GPS location detection right away!</span>
-      </div>
-      <button onclick="toggleSetupModal(true)" class="underline font-bold text-amber-200 hover:text-white shrink-0">
-        How to connect your Firebase →
-      </button>
-    </div>
-  </div>
 
   <!-- Main Container -->
   <main class="flex-1 max-w-4xl w-full mx-auto px-4 py-8 md:py-12">
@@ -105,13 +93,6 @@
         </svg>
         <span>Continue with Google</span>
       </button>
-
-      <div class="mt-6 pt-6 border-t border-slate-700/60">
-        <p class="text-xs text-slate-500 mb-3">Testing without Firebase configuration?</p>
-        <button onclick="useDemoAccount()" class="text-xs bg-slate-700/70 hover:bg-slate-700 text-emerald-400 font-semibold px-4 py-2 rounded-lg transition">
-          ⚡ Continue with One-Click Demo Profile
-        </button>
-      </div>
     </div>
 
     <!-- ============================================== -->
@@ -408,63 +389,6 @@
 
   </main>
 
-  <!-- ============================================== -->
-  <!-- FIREBASE CONFIGURATION GUIDE MODAL             -->
-  <!-- ============================================== -->
-  <div id="setup-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-700 rounded-3xl max-w-2xl w-full p-6 md:p-8 max-h-[90vh] overflow-y-auto">
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="text-xl font-black text-white flex items-center gap-2">
-          <span>🔥</span> <span>How to connect your Firebase Database</span>
-        </h3>
-        <button onclick="toggleSetupModal(false)" class="text-slate-400 hover:text-white text-2xl font-bold">×</button>
-      </div>
-
-      <div class="space-y-4 text-xs md:text-sm text-slate-300">
-        <p>Follow these 3 quick steps to save real orders into your Google Firebase project:</p>
-
-        <ol class="list-decimal list-inside space-y-3 pl-2 text-slate-300">
-          <li class="font-semibold text-white">
-            Create a Firebase Project:
-            <p class="font-normal text-slate-400 mt-1 pl-5">
-              Visit <a href="https://console.firebase.google.com" target="_blank" class="text-sky-400 underline">console.firebase.google.com</a>, click <strong>Add project</strong>, and name it (e.g. <em>PureDrop Dairy</em>).
-            </p>
-          </li>
-          <li class="font-semibold text-white">
-            Enable Google Sign-In & Firestore:
-            <p class="font-normal text-slate-400 mt-1 pl-5">
-              • In <strong>Authentication</strong> &gt; <strong>Sign-in method</strong>, enable <strong>Google</strong>.<br />
-              • In <strong>Firestore Database</strong>, click <strong>Create database</strong> (choose Start in test mode for instant testing).
-            </p>
-          </li>
-          <li class="font-semibold text-white">
-            Update <code class="bg-slate-800 text-emerald-400 px-2 py-0.5 rounded">firebase-config.js</code>:
-            <p class="font-normal text-slate-400 mt-1 pl-5">
-              In Firebase Project Settings &gt; General &gt; Your apps &gt; Web app (</>), copy your config and paste it into <code class="text-emerald-300">firebase-config.js</code> in this folder.
-            </p>
-          </li>
-        </ol>
-
-        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 font-mono text-[11px] text-slate-400 overflow-x-auto">
-          window.FIREBASE_CONFIG = {<br />
-          &nbsp;&nbsp;apiKey: "AIzaSy...",<br />
-          &nbsp;&nbsp;authDomain: "your-project.firebaseapp.com",<br />
-          &nbsp;&nbsp;projectId: "your-project-id",<br />
-          &nbsp;&nbsp;storageBucket: "your-project.appspot.com",<br />
-          &nbsp;&nbsp;messagingSenderId: "...",<br />
-          &nbsp;&nbsp;appId: "..."<br />
-          };
-        </div>
-      </div>
-
-      <div class="mt-6 flex justify-end">
-        <button onclick="toggleSetupModal(false)" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-5 py-2.5 rounded-xl text-xs">
-          Got It, Close
-        </button>
-      </div>
-    </div>
-  </div>
-
   <!-- JavaScript Logic -->
   <script>
     // State management
@@ -486,7 +410,7 @@
     let rtdb = null;
     let auth = null;
 
-    // Initialize Firebase if configured
+    // Initialize Firebase
     function initFirebase() {
       if (window.isFirebaseConfigured && window.isFirebaseConfigured()) {
         try {
@@ -494,13 +418,9 @@
             firebase.initializeApp(window.FIREBASE_CONFIG);
           }
           auth = firebase.auth();
-          try { db = firebase.firestore(); } catch (e) { console.warn("Firestore not initialized:", e); }
-          try { rtdb = firebase.database(); } catch (e) { console.warn("Realtime DB not initialized:", e); }
+          try { db = firebase.firestore(); } catch (e) { console.warn("Firestore init:", e); }
+          try { rtdb = firebase.database(); } catch (e) { console.warn("Realtime DB init:", e); }
           firebaseInitialized = true;
-
-          // Hide notice banner since actual keys are loaded
-          const banner = document.getElementById("firebase-notice");
-          if (banner) banner.classList.add("hidden");
 
           // Listen for auth state changes
           auth.onAuthStateChanged((user) => {
@@ -517,23 +437,9 @@
           });
 
         } catch (e) {
-          console.warn("Firebase initialization warning:", e);
-          showNoticeBanner();
+          console.error("Firebase initialization error:", e);
         }
-      } else {
-        showNoticeBanner();
       }
-    }
-
-    function showNoticeBanner() {
-      const banner = document.getElementById("firebase-notice");
-      if (banner) banner.classList.remove("hidden");
-    }
-
-    function toggleSetupModal(show) {
-      const modal = document.getElementById("setup-modal");
-      if (show) modal.classList.remove("hidden");
-      else modal.classList.add("hidden");
     }
 
     // Google Sign-In Action
@@ -544,22 +450,15 @@
           await auth.signInWithPopup(provider);
         } catch (error) {
           console.error("Firebase Auth Error:", error);
-          alert("Google Sign-In Error: " + error.message + "\n\nYou can also click 'Continue with One-Click Demo Profile' to test immediately.");
+          if (error.code === "auth/unauthorized-domain") {
+            alert("This domain is not yet authorized in Firebase Console.\n\nGo to Firebase Console > Authentication > Settings > Authorized Domains > Add '" + window.location.hostname + "'.");
+          } else {
+            alert("Google Sign-In Error: " + error.message);
+          }
         }
       } else {
-        // Fallback demo account for instant testing
-        useDemoAccount();
+        alert("Firebase is not initialized yet. Please check your connection.");
       }
-    }
-
-    // Demo Account for Testing without Firebase setup
-    function useDemoAccount() {
-      handleUserAuthenticated({
-        uid: "demo_user_" + Date.now(),
-        displayName: "Sazzad Hossain",
-        email: "sazzad.dairy@gmail.com",
-        photoURL: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&h=120&fit=crop"
-      });
     }
 
     // Handle Authenticated State
@@ -587,6 +486,28 @@
       document.getElementById("auth-section").classList.add("hidden");
       document.getElementById("order-flow-section").classList.remove("hidden");
       document.getElementById("success-section").classList.add("hidden");
+
+      // Auto-load previous delivery details if returning customer in Firestore
+      if (db && user && user.uid) {
+        db.collection("customers").doc(user.uid).get().then((doc) => {
+          if (doc.exists) {
+            const data = doc.data();
+            if (data.phone) {
+              const rawPhone = data.phone.replace("+880", "").trim();
+              if (rawPhone) document.getElementById("cust-phone").value = rawPhone;
+            }
+            if (data.lastAddress && !document.getElementById("cust-address").value) {
+              document.getElementById("cust-address").value = data.lastAddress;
+            }
+            if (data.lastArea && !document.getElementById("cust-area").value) {
+              document.getElementById("cust-area").value = data.lastArea;
+            }
+            if (data.lastCity) {
+              document.getElementById("cust-city").value = data.lastCity;
+            }
+          }
+        }).catch(err => console.log("Customer history lookup:", err));
+      }
 
       // Update Step Indicators
       updateStepIndicators(2);
@@ -652,10 +573,12 @@
           const lng = position.coords.longitude;
           const accuracy = Math.round(position.coords.accuracy);
 
+          const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
           detectedLocation = {
             latitude: lat,
             longitude: lng,
             accuracy: accuracy,
+            googleMapsUrl: mapsUrl,
             timestamp: new Date().toISOString()
           };
 
@@ -666,7 +589,6 @@
           accuracyBadge.textContent = `±${accuracy}m precision`;
 
           // Generate Google Maps pin link
-          const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
           mapsLink.href = mapsUrl;
 
           // Attempt OpenStreetMap reverse geocoding to auto-fill street address
