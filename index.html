@@ -158,7 +158,7 @@
       <a href="#products" class="hover:text-sky-600">Fresh Milk & Ghee</a>
       <a href="#plans" class="hover:text-sky-600">Daily Subscription</a>
     </nav>
-    <a href="#plans" class="bg-sky-600 hover:bg-sky-700 text-white text-sm font-bold px-5 py-2 rounded-full transition">Order Morning Trial</a>
+    <a href="order.html?item=trial" class="bg-sky-600 hover:bg-sky-700 text-white text-sm font-bold px-5 py-2 rounded-full transition">Order Morning Trial</a>
   </header>
 
   <!-- 1. SCROLLYTELLING CANVAS SECTION -->
@@ -191,6 +191,7 @@
         </div>
       </div>
 
+
       <!-- Progress dots -->
       <div id="scrolly-progress">
         <span class="active"></span>
@@ -217,7 +218,7 @@
           <h3 class="text-xl font-bold mb-2">Farm Fresh A2 Cow Milk</h3>
           <p class="text-slate-600 text-sm mb-6">Chilled to 4°C within 30 minutes of milking and sealed in glass bottles.</p>
           <div class="text-2xl font-black mb-6">৳120 <span class="text-sm font-normal text-slate-500">/ Liter</span></div>
-          <button class="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 rounded-xl">Subscribe Daily</button>
+          <a href="order.html?item=milk" class="block w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 rounded-xl">Subscribe Daily</a>
         </div>
 
         <div class="bg-sky-50 border-2 border-sky-600 rounded-3xl p-8 text-center hover:-translate-y-1.5 transition relative">
@@ -226,7 +227,7 @@
           <h3 class="text-xl font-bold mb-2">Cultured Desi Ghee</h3>
           <p class="text-slate-600 text-sm mb-6">Slow-churned from grass-fed curd using the traditional bilona method.</p>
           <div class="text-2xl font-black mb-6">৳1,450 <span class="text-sm font-normal text-slate-500">/ 500g Jar</span></div>
-          <button class="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 rounded-xl">Add to Morning Delivery</button>
+          <a href="order.html?item=ghee" class="block w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 rounded-xl">Add to Morning Delivery</a>
         </div>
 
         <div class="bg-slate-50 border border-slate-200 rounded-3xl p-8 text-center hover:-translate-y-1.5 transition">
@@ -234,7 +235,7 @@
           <h3 class="text-xl font-bold mb-2">Artisanal Clay-Pot Doi</h3>
           <p class="text-slate-600 text-sm mb-6">Thick, probiotic-rich sweet curd set fresh overnight in earthen pots.</p>
           <div class="text-2xl font-black mb-6">৳220 <span class="text-sm font-normal text-slate-500">/ 500g Pot</span></div>
-          <button class="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 rounded-xl">Add to Morning Delivery</button>
+          <a href="order.html?item=doi" class="block w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 rounded-xl">Add to Morning Delivery</a>
         </div>
       </div>
     </section>
@@ -246,9 +247,9 @@
           <h3 class="text-2xl md:text-3xl font-black mb-2">Try Our 7-Day Morning Trial Pack</h3>
           <p class="text-slate-300">Pause anytime before 10 PM • Zero delivery charges • Sanitized glass bottle return</p>
         </div>
-        <button class="bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black px-8 py-4 rounded-2xl shrink-0">
+        <a href="order.html?item=trial" class="bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black px-8 py-4 rounded-2xl shrink-0 inline-block text-center">
           Start 7-Day Trial →
-        </button>
+        </a>
       </div>
     </section>
 
@@ -257,6 +258,21 @@
   <footer class="bg-slate-950 text-slate-400 text-center py-8 text-sm">
     © 2026 PureDrop Dairy Delivery • Fresh from pasture to doorstep
   </footer>
+
+  <!-- Sticky "Order Now" Floating Button (Persistent on Right Side of Page) -->
+  <aside class="fixed bottom-6 right-6 md:bottom-8 md:right-8 z-50">
+    <a href="order.html" 
+       id="sticky-order-btn" 
+       aria-label="Order Milk Now"
+       class="flex items-center gap-2.5 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-slate-950 font-black text-xs md:text-base px-4 py-3 md:px-6 md:py-3.5 rounded-full shadow-2xl shadow-emerald-950/50 hover:shadow-emerald-500/50 hover:scale-105 active:scale-95 transition-all duration-300 border border-emerald-300/40 cursor-pointer group">
+      <span class="relative flex h-2.5 w-2.5">
+        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-300 opacity-75"></span>
+        <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-950"></span>
+      </span>
+      <span>Order Now</span>
+      <span class="inline-block transition-transform duration-200 group-hover:translate-x-1">→</span>
+    </a>
+  </aside>
 
   <!-- Canvas Image Sequence Scrollytelling Engine (Industry Gold Standard) -->
   <script>

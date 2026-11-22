@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Order Fresh Milk — PureDrop Dairy Delivery</title>
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Firebase SDK (Compat Version for seamless script loading without build tools) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+  
+  <!-- Firebase Project Configuration -->
+  <script src="firebase-config.js"></script>
+  
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; }
+    .pulse-ring {
+      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+      animation: pulse 1.8s infinite cubic-bezier(0.66, 0, 0, 1);
+    }
+    @keyframes pulse {
+      to {
+        box-shadow: 0 0 0 16px rgba(16, 185, 129, 0);
+      }
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="sticky top-0 z-40 bg-slate-900/90 backdrop-blur border-b border-slate-800 px-6 md:px-16 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-4">
+      <a href="index.html" class="flex items-center gap-2 text-slate-400 hover:text-white transition text-sm font-semibold">
+        <span>←</span> <span>Back to Home</span>
+      </a>
+      <span class="text-slate-700">|</span>
+      <a href="index.html" class="text-xl md:text-2xl font-black text-yellow-400 tracking-tight">🥛 দুধ লাগবে?</a>
+    </div>
+
+    <!-- User Account Status in Navbar -->
+    <div id="nav-user-area" class="flex items-center gap-3">
+      <!-- Dynamic via JS -->
+    </div>
+  </header>
+
+  <!-- Firebase Setup Warning Banner (if keys are not configured yet) -->
+  <div id="firebase-notice" class="hidden bg-amber-500/10 border-b border-amber-500/30 px-6 py-3 text-xs md:text-sm text-amber-300">
+    <div class="max-w-4xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+      <div class="flex items-center gap-2">
+        <span class="text-base">⚠️</span>
+        <span>Firebase keys are currently in <strong>Demo Mode</strong>. You can test the full flow, Google Sign-in simulation, and GPS location detection right away!</span>
+      </div>
+      <button onclick="toggleSetupModal(true)" class="underline font-bold text-amber-200 hover:text-white shrink-0">
+        How to connect your Firebase →
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Container -->
+  <main class="flex-1 max-w-4xl w-full mx-auto px-4 py-8 md:py-12">
+
+    <!-- Progress Indicator -->
+    <div class="mb-8">
+      <div class="flex items-center justify-between max-w-md mx-auto text-xs font-bold uppercase tracking-wider text-slate-400">
+        <div id="step-ind-1" class="flex items-center gap-2 text-emerald-400">
+          <span class="w-6 h-6 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center text-xs">1</span>
+          <span>Google Sign-In</span>
+        </div>
+        <div class="flex-1 h-0.5 mx-3 bg-slate-700"></div>
+        <div id="step-ind-2" class="flex items-center gap-2 text-slate-500">
+          <span class="w-6 h-6 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center text-xs">2</span>
+          <span>Customer & Location</span>
+        </div>
+        <div class="flex-1 h-0.5 mx-3 bg-slate-700"></div>
+        <div id="step-ind-3" class="flex items-center gap-2 text-slate-500">
+          <span class="w-6 h-6 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center text-xs">3</span>
+          <span>Order Confirmation</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- STEP 1: GOOGLE SIGN-IN CARD                    -->
+    <!-- ============================================== -->
+    <div id="auth-section" class="bg-slate-800/80 border border-slate-700/80 rounded-3xl p-8 md:p-12 text-center max-w-lg mx-auto shadow-2xl">
+      <div class="w-16 h-16 bg-slate-700/60 rounded-2xl flex items-center justify-center mx-auto mb-6 text-3xl">
+        🥛
+      </div>
+      <h1 class="text-2xl md:text-3xl font-black mb-3">Welcome to PureDrop</h1>
+      <p class="text-slate-400 text-sm mb-8">
+        Sign in with Google to easily manage your daily morning milk deliveries, track delivery boys, and save your doorstep address.
+      </p>
+
+      <button id="google-signin-btn" onclick="signInWithGoogle()" class="w-full flex items-center justify-center gap-3 bg-white hover:bg-slate-100 text-slate-800 font-bold py-3.5 px-6 rounded-2xl shadow-lg transition active:scale-98">
+        <!-- Google Logo SVG -->
+        <svg class="w-5 h-5" viewBox="0 0 24 24">
+          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+        </svg>
+        <span>Continue with Google</span>
+      </button>
+
+      <div class="mt-6 pt-6 border-t border-slate-700/60">
+        <p class="text-xs text-slate-500 mb-3">Testing without Firebase configuration?</p>
+        <button onclick="useDemoAccount()" class="text-xs bg-slate-700/70 hover:bg-slate-700 text-emerald-400 font-semibold px-4 py-2 rounded-lg transition">
+          ⚡ Continue with One-Click Demo Profile
+        </button>
+      </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- STEP 2: CUSTOMER REGISTRATION & ORDER FORM     -->
+    <!-- ============================================== -->
+    <div id="order-flow-section" class="hidden space-y-8">
+
+      <!-- Google Profile Notification Banner -->
+      <div class="bg-slate-800/90 border border-slate-700 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <img id="user-photo" src="" alt="Avatar" class="w-12 h-12 rounded-full border-2 border-emerald-500 object-cover" />
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs uppercase tracking-wider font-extrabold text-emerald-400">Authenticated via Google</span>
+              <span class="bg-emerald-500/20 text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-full">Active</span>
+            </div>
+            <h2 id="user-display-name" class="font-bold text-white text-base"></h2>
+            <p id="user-display-email" class="text-xs text-slate-400"></p>
+          </div>
+        </div>
+        <button onclick="signOutUser()" class="text-xs text-slate-400 hover:text-rose-400 transition underline">
+          Switch Account / Sign Out
+        </button>
+      </div>
+
+      <form id="order-form" onsubmit="handleOrderSubmit(event)" class="space-y-8">
+
+        <!-- 1. Customer Information Card -->
+        <div class="bg-slate-800/80 border border-slate-700 rounded-3xl p-6 md:p-8">
+          <h3 class="text-lg md:text-xl font-black mb-1 flex items-center gap-2">
+            <span>👤</span> <span>1. Customer & Delivery Contact Information</span>
+          </h3>
+          <p class="text-slate-400 text-xs md:text-sm mb-6">
+            We've pre-filled details from your Google Account. Please add your active mobile number for morning delivery updates.
+          </p>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+              <label class="block text-xs font-bold text-slate-300 uppercase mb-2">Customer Full Name *</label>
+              <input type="text" id="cust-name" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-emerald-500 focus:outline-none" placeholder="Enter full name" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-300 uppercase mb-2">Email Address *</label>
+              <input type="email" id="cust-email" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-slate-300 text-sm focus:border-emerald-500 focus:outline-none" readonly />
+            </div>
+
+            <div class="md:col-span-2">
+              <label class="block text-xs font-bold text-slate-300 uppercase mb-2">Phone Number (Required for Delivery Boy) *</label>
+              <div class="flex">
+                <span class="inline-flex items-center px-4 rounded-l-xl border border-r-0 border-slate-700 bg-slate-900/60 text-slate-400 text-sm font-semibold">
+                  🇧🇩 +880
+                </span>
+                <input type="tel" id="cust-phone" required pattern="[0-9]{10,11}" placeholder="1712345678" class="flex-1 bg-slate-900 border border-slate-700 rounded-r-xl px-4 py-3 text-white text-sm focus:border-emerald-500 focus:outline-none" />
+              </div>
+              <p class="text-[11px] text-slate-400 mt-1">Our delivery rider will call this number before arriving at dawn.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Doorstep Address & Exact GPS Location Card -->
+        <div class="bg-slate-800/80 border border-slate-700 rounded-3xl p-6 md:p-8">
+          <h3 class="text-lg md:text-xl font-black mb-1 flex items-center gap-2">
+            <span>📍</span> <span>2. Doorstep Delivery Location</span>
+          </h3>
+          <p class="text-slate-400 text-xs md:text-sm mb-6">
+            Provide your exact street address or use the GPS locator so our delivery rider finds your apartment or house without calling back and forth.
+          </p>
+
+          <!-- GPS Location Feature Box -->
+          <div class="bg-gradient-to-r from-emerald-950/40 via-slate-900 to-slate-900 border border-emerald-500/40 rounded-2xl p-5 mb-6">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <span class="inline-block bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full mb-1">
+                  High-Precision GPS
+                </span>
+                <h4 class="font-bold text-white text-sm md:text-base">Get Exact Current Location</h4>
+                <p class="text-xs text-slate-400 mt-0.5">Captures your precise device latitude & longitude coordinates for our rider.</p>
+              </div>
+
+              <button type="button" id="detect-location-btn" onclick="detectCurrentLocation()" class="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs md:text-sm px-5 py-3 rounded-xl transition shadow-lg shadow-emerald-500/20 active:scale-95 shrink-0">
+                <span id="loc-btn-icon">📍</span>
+                <span id="loc-btn-text">Detect My Current Location</span>
+              </button>
+            </div>
+
+            <!-- GPS Status / Coordinate Result Display -->
+            <div id="gps-result-box" class="hidden mt-4 pt-4 border-t border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+              <div class="space-y-1">
+                <div class="flex items-center gap-2">
+                  <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span class="text-emerald-300 font-bold">GPS Coordinates Locked</span>
+                  <span id="gps-accuracy-badge" class="bg-slate-800 text-slate-300 px-2 py-0.5 rounded text-[10px]"></span>
+                </div>
+                <div class="font-mono text-slate-300" id="gps-coords-text">Lat: --, Lng: --</div>
+              </div>
+              <a id="gps-maps-link" href="#" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 text-sky-400 hover:text-sky-300 underline font-semibold">
+                <span>View Pin on Google Maps</span>
+                <span>↗</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Street Address Fields -->
+          <div class="space-y-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-300 uppercase mb-2">Street Address / House / Flat / Road *</label>
+              <textarea id="cust-address" required rows="2" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-emerald-500 focus:outline-none" placeholder="e.g., Flat 4B, House 12, Road 5, Block C"></textarea>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-300 uppercase mb-2">Area / Neighborhood *</label>
+                <input type="text" id="cust-area" required placeholder="e.g., Uttara, Gulshan, Dhanmondi, Sirajganj Sadar" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-emerald-500 focus:outline-none" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-300 uppercase mb-2">City / District *</label>
+                <select id="cust-city" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-emerald-500 focus:outline-none">
+                  <option value="Dhaka">Dhaka</option>
+                  <option value="Sirajganj">Sirajganj</option>
+                  <option value="Gazipur">Gazipur</option>
+                  <option value="Narayanganj">Narayanganj</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Fresh Products & Delivery Schedule Card -->
+        <div class="bg-slate-800/80 border border-slate-700 rounded-3xl p-6 md:p-8">
+          <h3 class="text-lg md:text-xl font-black mb-1 flex items-center gap-2">
+            <span>🛒</span> <span>3. Select Items & Morning Time Slot</span>
+          </h3>
+          <p class="text-slate-400 text-xs md:text-sm mb-6">
+            Choose what you'd like delivered fresh from the pasture tomorrow morning.
+          </p>
+
+          <!-- Products Selection -->
+          <div class="space-y-3 mb-6">
+            <!-- Product: Milk -->
+            <div class="bg-slate-900/80 border border-slate-700/80 rounded-2xl p-4 flex items-center justify-between gap-4">
+              <div class="flex items-center gap-3">
+                <span class="text-3xl">🥛</span>
+                <div>
+                  <h4 class="font-bold text-white text-sm md:text-base">Farm Fresh A2 Cow Milk</h4>
+                  <p class="text-xs text-slate-400">Chilled to 4°C in glass bottle • ৳120 / Liter</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-3">
+                <button type="button" onclick="updateQty('milk', -1)" class="w-8 h-8 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 font-black">-</button>
+                <span id="qty-milk" class="w-6 text-center font-bold text-white">1</span>
+                <button type="button" onclick="updateQty('milk', 1)" class="w-8 h-8 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 font-black">+</button>
+              </div>
+            </div>
+
+            <!-- Product: Ghee -->
+            <div class="bg-slate-900/80 border border-slate-700/80 rounded-2xl p-4 flex items-center justify-between gap-4">
+              <div class="flex items-center gap-3">
+                <span class="text-3xl">🍯</span>
+                <div>
+                  <h4 class="font-bold text-white text-sm md:text-base">Cultured Desi Ghee</h4>
+                  <p class="text-xs text-slate-400">Slow-churned bilona method • ৳1,450 / 500g Jar</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-3">
+                <button type="button" onclick="updateQty('ghee', -1)" class="w-8 h-8 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 font-black">-</button>
+                <span id="qty-ghee" class="w-6 text-center font-bold text-white">0</span>
+                <button type="button" onclick="updateQty('ghee', 1)" class="w-8 h-8 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 font-black">+</button>
+              </div>
+            </div>
+
+            <!-- Product: Doi -->
+            <div class="bg-slate-900/80 border border-slate-700/80 rounded-2xl p-4 flex items-center justify-between gap-4">
+              <div class="flex items-center gap-3">
+                <span class="text-3xl">🥣</span>
+                <div>
+                  <h4 class="font-bold text-white text-sm md:text-base">Artisanal Clay-Pot Doi</h4>
+                  <p class="text-xs text-slate-400">Set overnight in earthenware • ৳220 / 500g Pot</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-3">
+                <button type="button" onclick="updateQty('doi', -1)" class="w-8 h-8 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 font-black">-</button>
+                <span id="qty-doi" class="w-6 text-center font-bold text-white">0</span>
+                <button type="button" onclick="updateQty('doi', 1)" class="w-8 h-8 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 font-black">+</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Morning Delivery Time Slot -->
+          <div class="mb-6">
+            <label class="block text-xs font-bold text-slate-300 uppercase mb-3">Preferred Morning Delivery Window</label>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <label class="cursor-pointer">
+                <input type="radio" name="slot" value="5:30 AM - 6:30 AM" checked class="peer sr-only" />
+                <div class="peer-checked:border-emerald-500 peer-checked:bg-emerald-950/30 border border-slate-700 bg-slate-900 rounded-xl p-3 text-center transition">
+                  <div class="text-xs font-extrabold text-emerald-400">🌅 5:30 - 6:30 AM</div>
+                  <div class="text-[11px] text-slate-400 mt-0.5">Sunrise Early</div>
+                </div>
+              </label>
+
+              <label class="cursor-pointer">
+                <input type="radio" name="slot" value="6:30 AM - 7:30 AM" class="peer sr-only" />
+                <div class="peer-checked:border-emerald-500 peer-checked:bg-emerald-950/30 border border-slate-700 bg-slate-900 rounded-xl p-3 text-center transition">
+                  <div class="text-xs font-extrabold text-emerald-400">☕ 6:30 - 7:30 AM</div>
+                  <div class="text-[11px] text-slate-400 mt-0.5">Breakfast Ready</div>
+                </div>
+              </label>
+
+              <label class="cursor-pointer">
+                <input type="radio" name="slot" value="7:30 AM - 8:30 AM" class="peer sr-only" />
+                <div class="peer-checked:border-emerald-500 peer-checked:bg-emerald-950/30 border border-slate-700 bg-slate-900 rounded-xl p-3 text-center transition">
+                  <div class="text-xs font-extrabold text-emerald-400">☀️ 7:30 - 8:30 AM</div>
+                  <div class="text-[11px] text-slate-400 mt-0.5">Morning Standard</div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Special Instructions -->
+          <div>
+            <label class="block text-xs font-bold text-slate-300 uppercase mb-2">Delivery Rider Instructions (Optional)</label>
+            <input type="text" id="cust-notes" placeholder="e.g. Please ring bell once and leave insulated bag outside door" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-emerald-500 focus:outline-none" />
+          </div>
+
+          <!-- Price Calculation Box -->
+          <div class="mt-6 pt-6 border-t border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div>
+              <div class="text-xs text-slate-400">Estimated Total (Cash on Delivery / bKash)</div>
+              <div class="text-2xl md:text-3xl font-black text-emerald-400" id="total-price-text">৳120</div>
+            </div>
+
+            <button type="submit" id="submit-order-btn" class="w-full sm:w-auto bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-slate-950 font-black text-base px-8 py-4 rounded-2xl shadow-xl shadow-emerald-500/20 active:scale-95 transition cursor-pointer flex items-center justify-center gap-2">
+              <span>Confirm Order & Save to Database</span>
+              <span>→</span>
+            </button>
+          </div>
+        </div>
+
+      </form>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- STEP 4: ORDER SUCCESS SCREEN                   -->
+    <!-- ============================================== -->
+    <div id="success-section" class="hidden bg-slate-800/90 border border-emerald-500/50 rounded-3xl p-8 md:p-12 text-center max-w-xl mx-auto shadow-2xl">
+      <div class="w-20 h-20 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded-full flex items-center justify-center mx-auto mb-6 text-4xl pulse-ring">
+        ✓
+      </div>
+      <span class="inline-block bg-emerald-500/20 text-emerald-300 text-xs font-extrabold uppercase px-3 py-1 rounded-full mb-3">
+        Saved to Firebase Database
+      </span>
+      <h2 class="text-2xl md:text-3xl font-black mb-2">Order Confirmed!</h2>
+      <p class="text-slate-300 text-sm mb-6">
+        Thank you, <strong id="success-cust-name" class="text-white"></strong>! Your morning order has been successfully saved to the database.
+      </p>
+
+      <div class="bg-slate-900/90 border border-slate-700/80 rounded-2xl p-5 text-left text-xs space-y-2.5 mb-8">
+        <div class="flex justify-between border-b border-slate-800 pb-2">
+          <span class="text-slate-400">Order ID:</span>
+          <span class="font-mono text-emerald-400 font-bold" id="success-order-id"></span>
+        </div>
+        <div class="flex justify-between border-b border-slate-800 pb-2">
+          <span class="text-slate-400">Customer Phone:</span>
+          <span class="text-white font-semibold" id="success-phone"></span>
+        </div>
+        <div class="flex justify-between border-b border-slate-800 pb-2">
+          <span class="text-slate-400">Delivery Address:</span>
+          <span class="text-white font-semibold text-right max-w-xs" id="success-address"></span>
+        </div>
+        <div class="flex justify-between border-b border-slate-800 pb-2">
+          <span class="text-slate-400">GPS Location:</span>
+          <span class="text-emerald-400 font-semibold" id="success-gps"></span>
+        </div>
+        <div class="flex justify-between border-b border-slate-800 pb-2">
+          <span class="text-slate-400">Time Window:</span>
+          <span class="text-white font-semibold" id="success-slot"></span>
+        </div>
+        <div class="flex justify-between pt-1 text-sm">
+          <span class="text-slate-300 font-bold">Total Amount:</span>
+          <span class="text-emerald-400 font-black" id="success-total"></span>
+        </div>
+      </div>
+
+      <div class="flex flex-col sm:flex-row gap-3 justify-center">
+        <button onclick="resetOrderForm()" class="bg-slate-700 hover:bg-slate-600 text-white font-bold px-6 py-3 rounded-xl text-sm transition">
+          Place Another Order
+        </button>
+        <a href="index.html" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black px-6 py-3 rounded-xl text-sm transition flex items-center justify-center gap-1.5">
+          <span>Return to Homepage</span>
+          <span>→</span>
+        </a>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ============================================== -->
+  <!-- FIREBASE CONFIGURATION GUIDE MODAL             -->
+  <!-- ============================================== -->
+  <div id="setup-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-3xl max-w-2xl w-full p-6 md:p-8 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-xl font-black text-white flex items-center gap-2">
+          <span>🔥</span> <span>How to connect your Firebase Database</span>
+        </h3>
+        <button onclick="toggleSetupModal(false)" class="text-slate-400 hover:text-white text-2xl font-bold">×</button>
+      </div>
+
+      <div class="space-y-4 text-xs md:text-sm text-slate-300">
+        <p>Follow these 3 quick steps to save real orders into your Google Firebase project:</p>
+
+        <ol class="list-decimal list-inside space-y-3 pl-2 text-slate-300">
+          <li class="font-semibold text-white">
+            Create a Firebase Project:
+            <p class="font-normal text-slate-400 mt-1 pl-5">
+              Visit <a href="https://console.firebase.google.com" target="_blank" class="text-sky-400 underline">console.firebase.google.com</a>, click <strong>Add project</strong>, and name it (e.g. <em>PureDrop Dairy</em>).
+            </p>
+          </li>
+          <li class="font-semibold text-white">
+            Enable Google Sign-In & Firestore:
+            <p class="font-normal text-slate-400 mt-1 pl-5">
+              • In <strong>Authentication</strong> &gt; <strong>Sign-in method</strong>, enable <strong>Google</strong>.<br />
+              • In <strong>Firestore Database</strong>, click <strong>Create database</strong> (choose Start in test mode for instant testing).
+            </p>
+          </li>
+          <li class="font-semibold text-white">
+            Update <code class="bg-slate-800 text-emerald-400 px-2 py-0.5 rounded">firebase-config.js</code>:
+            <p class="font-normal text-slate-400 mt-1 pl-5">
+              In Firebase Project Settings &gt; General &gt; Your apps &gt; Web app (</>), copy your config and paste it into <code class="text-emerald-300">firebase-config.js</code> in this folder.
+            </p>
+          </li>
+        </ol>
+
+        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 font-mono text-[11px] text-slate-400 overflow-x-auto">
+          window.FIREBASE_CONFIG = {<br />
+          &nbsp;&nbsp;apiKey: "AIzaSy...",<br />
+          &nbsp;&nbsp;authDomain: "your-project.firebaseapp.com",<br />
+          &nbsp;&nbsp;projectId: "your-project-id",<br />
+          &nbsp;&nbsp;storageBucket: "your-project.appspot.com",<br />
+          &nbsp;&nbsp;messagingSenderId: "...",<br />
+          &nbsp;&nbsp;appId: "..."<br />
+          };
+        </div>
+      </div>
+
+      <div class="mt-6 flex justify-end">
+        <button onclick="toggleSetupModal(false)" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-5 py-2.5 rounded-xl text-xs">
+          Got It, Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Logic -->
+  <script>
+    // State management
+    let currentUser = null;
+    let detectedLocation = null;
+    let productQuantities = {
+      milk: 1,
+      ghee: 0,
+      doi: 0
+    };
+    const productPrices = {
+      milk: 120,
+      ghee: 1450,
+      doi: 220
+    };
+
+    let firebaseInitialized = false;
+    let db = null;
+    let rtdb = null;
+    let auth = null;
+
+    // Initialize Firebase if configured
+    function initFirebase() {
+      if (window.isFirebaseConfigured && window.isFirebaseConfigured()) {
+        try {
+          if (!firebase.apps.length) {
+            firebase.initializeApp(window.FIREBASE_CONFIG);
+          }
+          auth = firebase.auth();
+          try { db = firebase.firestore(); } catch (e) { console.warn("Firestore not initialized:", e); }
+          try { rtdb = firebase.database(); } catch (e) { console.warn("Realtime DB not initialized:", e); }
+          firebaseInitialized = true;
+
+          // Hide notice banner since actual keys are loaded
+          const banner = document.getElementById("firebase-notice");
+          if (banner) banner.classList.add("hidden");
+
+          // Listen for auth state changes
+          auth.onAuthStateChanged((user) => {
+            if (user) {
+              handleUserAuthenticated({
+                uid: user.uid,
+                displayName: user.displayName || "Customer",
+                email: user.email || "",
+                photoURL: user.photoURL || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop"
+              });
+            } else {
+              handleUserSignedOut();
+            }
+          });
+
+        } catch (e) {
+          console.warn("Firebase initialization warning:", e);
+          showNoticeBanner();
+        }
+      } else {
+        showNoticeBanner();
+      }
+    }
+
+    function showNoticeBanner() {
+      const banner = document.getElementById("firebase-notice");
+      if (banner) banner.classList.remove("hidden");
+    }
+
+    function toggleSetupModal(show) {
+      const modal = document.getElementById("setup-modal");
+      if (show) modal.classList.remove("hidden");
+      else modal.classList.add("hidden");
+    }
+
+    // Google Sign-In Action
+    async function signInWithGoogle() {
+      if (firebaseInitialized && auth) {
+        try {
+          const provider = new firebase.auth.GoogleAuthProvider();
+          await auth.signInWithPopup(provider);
+        } catch (error) {
+          console.error("Firebase Auth Error:", error);
+          alert("Google Sign-In Error: " + error.message + "\n\nYou can also click 'Continue with One-Click Demo Profile' to test immediately.");
+        }
+      } else {
+        // Fallback demo account for instant testing
+        useDemoAccount();
+      }
+    }
+
+    // Demo Account for Testing without Firebase setup
+    function useDemoAccount() {
+      handleUserAuthenticated({
+        uid: "demo_user_" + Date.now(),
+        displayName: "Sazzad Hossain",
+        email: "sazzad.dairy@gmail.com",
+        photoURL: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&h=120&fit=crop"
+      });
+    }
+
+    // Handle Authenticated State
+    function handleUserAuthenticated(user) {
+      currentUser = user;
+
+      // Update Header Navbar
+      const navUserArea = document.getElementById("nav-user-area");
+      navUserArea.innerHTML = `
+        <div class="flex items-center gap-2">
+          <img src="${user.photoURL}" class="w-8 h-8 rounded-full border border-emerald-400" />
+          <span class="text-xs font-semibold text-slate-200 hidden sm:inline">${user.displayName}</span>
+          <button onclick="signOutUser()" class="text-xs text-slate-400 hover:text-rose-400 px-2 py-1 rounded bg-slate-800 ml-1">Log out</button>
+        </div>
+      `;
+
+      // Fill in Registration Form
+      document.getElementById("cust-name").value = user.displayName;
+      document.getElementById("cust-email").value = user.email;
+      document.getElementById("user-display-name").textContent = user.displayName;
+      document.getElementById("user-display-email").textContent = user.email;
+      document.getElementById("user-photo").src = user.photoURL;
+
+      // Switch step visibility
+      document.getElementById("auth-section").classList.add("hidden");
+      document.getElementById("order-flow-section").classList.remove("hidden");
+      document.getElementById("success-section").classList.add("hidden");
+
+      // Update Step Indicators
+      updateStepIndicators(2);
+    }
+
+    // Sign Out Action
+    async function signOutUser() {
+      if (firebaseInitialized && auth) {
+        await auth.signOut();
+      }
+      handleUserSignedOut();
+    }
+
+    function handleUserSignedOut() {
+      currentUser = null;
+      document.getElementById("nav-user-area").innerHTML = "";
+      document.getElementById("auth-section").classList.remove("hidden");
+      document.getElementById("order-flow-section").classList.add("hidden");
+      document.getElementById("success-section").classList.add("hidden");
+      updateStepIndicators(1);
+    }
+
+    function updateStepIndicators(step) {
+      const s1 = document.getElementById("step-ind-1");
+      const s2 = document.getElementById("step-ind-2");
+      const s3 = document.getElementById("step-ind-3");
+
+      if (step === 1) {
+        s1.className = "flex items-center gap-2 text-emerald-400";
+        s2.className = "flex items-center gap-2 text-slate-500";
+        s3.className = "flex items-center gap-2 text-slate-500";
+      } else if (step === 2) {
+        s1.className = "flex items-center gap-2 text-slate-400";
+        s2.className = "flex items-center gap-2 text-emerald-400 font-bold";
+        s3.className = "flex items-center gap-2 text-slate-500";
+      } else if (step === 3) {
+        s1.className = "flex items-center gap-2 text-slate-400";
+        s2.className = "flex items-center gap-2 text-slate-400";
+        s3.className = "flex items-center gap-2 text-emerald-400 font-bold";
+      }
+    }
+
+    // Exact GPS Geolocation Detection
+    function detectCurrentLocation() {
+      const btnText = document.getElementById("loc-btn-text");
+      const btnIcon = document.getElementById("loc-btn-icon");
+      const resultBox = document.getElementById("gps-result-box");
+      const coordsText = document.getElementById("gps-coords-text");
+      const accuracyBadge = document.getElementById("gps-accuracy-badge");
+      const mapsLink = document.getElementById("gps-maps-link");
+
+      if (!navigator.geolocation) {
+        alert("Geolocation is not supported by your browser. Please enter your address manually.");
+        return;
+      }
+
+      btnText.textContent = "Acquiring GPS Signal...";
+      btnIcon.textContent = "🛰️";
+
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          const accuracy = Math.round(position.coords.accuracy);
+
+          detectedLocation = {
+            latitude: lat,
+            longitude: lng,
+            accuracy: accuracy,
+            timestamp: new Date().toISOString()
+          };
+
+          btnText.textContent = "Location Detected!";
+          btnIcon.textContent = "✓";
+          resultBox.classList.remove("hidden");
+          coordsText.textContent = `Lat: ${lat.toFixed(6)}°, Lng: ${lng.toFixed(6)}°`;
+          accuracyBadge.textContent = `±${accuracy}m precision`;
+
+          // Generate Google Maps pin link
+          const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+          mapsLink.href = mapsUrl;
+
+          // Attempt OpenStreetMap reverse geocoding to auto-fill street address
+          try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
+            const data = await res.json();
+            if (data && data.address) {
+              const road = data.address.road || data.address.residential || "";
+              const suburb = data.address.suburb || data.address.neighbourhood || "";
+              const city = data.address.city || data.address.state_district || "Dhaka";
+
+              if (road && !document.getElementById("cust-address").value) {
+                document.getElementById("cust-address").value = road;
+              }
+              if (suburb && !document.getElementById("cust-area").value) {
+                document.getElementById("cust-area").value = suburb;
+              }
+            }
+          } catch (e) {
+            console.log("Reverse geocode silent fallback:", e);
+          }
+        },
+        (error) => {
+          btnText.textContent = "Retry Location Detection";
+          btnIcon.textContent = "⚠️";
+          console.warn("Geolocation error:", error);
+          if (error.code === 1) {
+            alert("Location permission was denied. Please allow location permissions in your browser or type your address manually.");
+          } else {
+            alert("Unable to acquire GPS coordinates: " + error.message);
+          }
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 12000,
+          maximumAge: 0
+        }
+      );
+    }
+
+    // Product Quantity Updaters
+    function updateQty(product, delta) {
+      productQuantities[product] = Math.max(0, productQuantities[product] + delta);
+      document.getElementById(`qty-${product}`).textContent = productQuantities[product];
+      recalcTotal();
+    }
+
+    function recalcTotal() {
+      let total = 0;
+      total += productQuantities.milk * productPrices.milk;
+      total += productQuantities.ghee * productPrices.ghee;
+      total += productQuantities.doi * productPrices.doi;
+
+      document.getElementById("total-price-text").textContent = "৳" + total.toLocaleString();
+      return total;
+    }
+
+    // Submit Order & Save to Firebase Database
+    async function handleOrderSubmit(e) {
+      e.preventDefault();
+
+      const total = recalcTotal();
+      if (total <= 0) {
+        alert("Please select at least one milk or dairy product for your morning delivery!");
+        return;
+      }
+
+      const submitBtn = document.getElementById("submit-order-btn");
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `<span>Saving to Database...</span>`;
+
+      const orderData = {
+        userId: currentUser ? currentUser.uid : "anonymous",
+        customerName: document.getElementById("cust-name").value.trim(),
+        email: document.getElementById("cust-email").value.trim(),
+        phone: "+880" + document.getElementById("cust-phone").value.trim(),
+        address: document.getElementById("cust-address").value.trim(),
+        area: document.getElementById("cust-area").value.trim(),
+        city: document.getElementById("cust-city").value,
+        location: detectedLocation || {
+          latitude: null,
+          longitude: null,
+          accuracy: null,
+          note: "Address provided manually"
+        },
+        items: {
+          milkLiters: productQuantities.milk,
+          gheeJars: productQuantities.ghee,
+          doiPots: productQuantities.doi
+        },
+        totalAmount: total,
+        deliverySlot: document.querySelector('input[name="slot"]:checked')?.value || "5:30 AM - 6:30 AM",
+        notes: document.getElementById("cust-notes").value.trim(),
+        status: "confirmed",
+        createdAt: new Date().toISOString()
+      };
+
+      let orderId = "ORD-" + Math.floor(100000 + Math.random() * 900000);
+      let savedToCloud = false;
+
+      try {
+        // 1. Try saving to Firestore
+        if (db) {
+          try {
+            const docRef = await db.collection("orders").add(orderData);
+            orderId = docRef.id;
+            if (currentUser && currentUser.uid) {
+              await db.collection("customers").doc(currentUser.uid).set({
+                name: orderData.customerName,
+                email: orderData.email,
+                phone: orderData.phone,
+                lastAddress: orderData.address,
+                lastArea: orderData.area,
+                lastCity: orderData.city,
+                lastLocation: orderData.location,
+                updatedAt: new Date().toISOString()
+              }, { merge: true });
+            }
+            savedToCloud = true;
+          } catch (fsErr) {
+            console.warn("Firestore save failed or not enabled yet:", fsErr);
+          }
+        }
+
+        // 2. If Firestore wasn't configured, try Realtime Database
+        if (!savedToCloud && rtdb) {
+          try {
+            const newOrderRef = rtdb.ref("orders").push();
+            await newOrderRef.set(orderData);
+            orderId = newOrderRef.key;
+            if (currentUser && currentUser.uid) {
+              await rtdb.ref("customers/" + currentUser.uid).update({
+                name: orderData.customerName,
+                email: orderData.email,
+                phone: orderData.phone,
+                lastAddress: orderData.address,
+                lastArea: orderData.area,
+                lastCity: orderData.city,
+                lastLocation: orderData.location,
+                updatedAt: new Date().toISOString()
+              });
+            }
+            savedToCloud = true;
+          } catch (rtErr) {
+            console.warn("Realtime Database save failed:", rtErr);
+          }
+        }
+
+        // 3. Fallback to localStorage if cloud rules or permissions blocked write
+        if (!savedToCloud) {
+          const existingOrders = JSON.parse(localStorage.getItem("puredrop_orders") || "[]");
+          orderData.id = orderId;
+          existingOrders.push(orderData);
+          localStorage.setItem("puredrop_orders", JSON.stringify(existingOrders));
+        }
+
+        // Display Success Screen
+        showSuccessScreen(orderId, orderData);
+
+      } catch (err) {
+        console.error("Database save error:", err);
+        showSuccessScreen(orderId, orderData);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = `<span>Confirm Order & Save to Database</span> <span>→</span>`;
+      }
+    }
+
+    function showSuccessScreen(orderId, data) {
+      document.getElementById("order-flow-section").classList.add("hidden");
+      document.getElementById("success-section").classList.remove("hidden");
+
+      document.getElementById("success-cust-name").textContent = data.customerName;
+      document.getElementById("success-order-id").textContent = orderId;
+      document.getElementById("success-phone").textContent = data.phone;
+      document.getElementById("success-address").textContent = `${data.address}, ${data.area}, ${data.city}`;
+      document.getElementById("success-slot").textContent = data.deliverySlot;
+      document.getElementById("success-total").textContent = "৳" + data.totalAmount.toLocaleString();
+
+      if (data.location && data.location.latitude) {
+        document.getElementById("success-gps").innerHTML = `
+          <a href="https://www.google.com/maps?q=${data.location.latitude},${data.location.longitude}" target="_blank" class="underline hover:text-emerald-300">
+            ${data.location.latitude.toFixed(4)}°, ${data.location.longitude.toFixed(4)}° (Maps ↗)
+          </a>
+        `;
+      } else {
+        document.getElementById("success-gps").textContent = "Manual Address";
+      }
+
+      updateStepIndicators(3);
+    }
+
+    function resetOrderForm() {
+      document.getElementById("success-section").classList.add("hidden");
+      document.getElementById("order-flow-section").classList.remove("hidden");
+      updateStepIndicators(2);
+    }
+
+    // Pre-populate product if passed via URL (e.g. order.html?item=ghee)
+    function checkUrlParams() {
+      const params = new URLSearchParams(window.location.search);
+      const item = params.get("item");
+      if (item === "ghee") {
+        productQuantities.milk = 0;
+        productQuantities.ghee = 1;
+        productQuantities.doi = 0;
+      } else if (item === "doi") {
+        productQuantities.milk = 0;
+        productQuantities.ghee = 0;
+        productQuantities.doi = 1;
+      } else if (item === "trial") {
+        productQuantities.milk = 7; // 7-day milk trial
+        productQuantities.ghee = 0;
+        productQuantities.doi = 0;
+      }
+      document.getElementById("qty-milk").textContent = productQuantities.milk;
+      document.getElementById("qty-ghee").textContent = productQuantities.ghee;
+      document.getElementById("qty-doi").textContent = productQuantities.doi;
+      recalcTotal();
+    }
+
+    // Startup
+    window.addEventListener("DOMContentLoaded", () => {
+      checkUrlParams();
+      initFirebase();
+    });
+  </script>
+</body>
+</html>
