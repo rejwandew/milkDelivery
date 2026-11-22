@@ -96,138 +96,44 @@
     </div>
 
     <!-- ============================================== -->
-    <!-- STEP 2: CUSTOMER REGISTRATION & ORDER FORM     -->
+    <!-- STEP 2: ORDER FLOW SECTION                     -->
     <!-- ============================================== -->
     <div id="order-flow-section" class="hidden space-y-8">
 
-      <!-- Google Profile Notification Banner -->
-      <div class="bg-slate-800/90 border border-slate-700 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div class="flex items-center gap-3">
-          <img id="user-photo" src="" alt="Avatar" class="w-12 h-12 rounded-full border-2 border-emerald-500 object-cover" />
-          <div>
-            <div class="flex items-center gap-2">
-              <span class="text-xs uppercase tracking-wider font-extrabold text-emerald-400">Authenticated via Google</span>
-              <span class="bg-emerald-500/20 text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-full">Active</span>
+      <!-- Customer Doorstep Delivery Details Summary Card -->
+      <div class="bg-slate-800/90 border border-slate-700/80 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-2xl">
+        <div class="flex items-start gap-4">
+          <img id="summary-user-photo" src="" alt="Avatar" class="w-14 h-14 rounded-2xl border-2 border-emerald-500 object-cover shrink-0 mt-0.5" />
+          <div class="space-y-1">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-xs uppercase tracking-wider font-extrabold text-emerald-400">Morning Delivery Destination</span>
+              <span id="summary-gps-badge" class="bg-emerald-500/20 text-emerald-300 text-[10px] font-bold px-2.5 py-0.5 rounded-full">📍 Location Ready</span>
             </div>
-            <h2 id="user-display-name" class="font-bold text-white text-base"></h2>
-            <p id="user-display-email" class="text-xs text-slate-400"></p>
+            <h2 id="summary-cust-name" class="text-lg md:text-xl font-black text-white"></h2>
+            <div class="flex items-center gap-3 text-xs text-slate-300 flex-wrap">
+              <span id="summary-cust-phone" class="font-semibold text-emerald-400"></span>
+              <span class="text-slate-600">•</span>
+              <span id="summary-cust-email" class="text-slate-400"></span>
+            </div>
+            <p id="summary-cust-address" class="text-xs md:text-sm text-slate-300 max-w-xl pt-0.5"></p>
           </div>
         </div>
-        <button onclick="signOutUser()" class="text-xs text-slate-400 hover:text-rose-400 transition underline">
-          Switch Account / Sign Out
+
+        <button type="button" onclick="openRegistrationModal(true)" class="flex items-center gap-2 bg-slate-700/80 hover:bg-slate-700 text-white font-bold text-xs md:text-sm px-5 py-3 rounded-2xl transition border border-slate-600 shrink-0 shadow-lg">
+          <span>✏️</span> <span>Edit Details / Location</span>
         </button>
       </div>
 
+      <!-- Order Selection Form -->
       <form id="order-form" onsubmit="handleOrderSubmit(event)" class="space-y-8">
 
-        <!-- 1. Customer Information Card -->
+        <!-- Fresh Products & Delivery Schedule Card -->
         <div class="bg-slate-800/80 border border-slate-700 rounded-3xl p-6 md:p-8">
           <h3 class="text-lg md:text-xl font-black mb-1 flex items-center gap-2">
-            <span>👤</span> <span>1. Customer & Delivery Contact Information</span>
+            <span>🛒</span> <span>Choose Items & Morning Delivery Window</span>
           </h3>
           <p class="text-slate-400 text-xs md:text-sm mb-6">
-            We've pre-filled details from your Google Account. Please add your active mobile number for morning delivery updates.
-          </p>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div>
-              <label class="block text-xs font-bold text-slate-300 uppercase mb-2">Customer Full Name *</label>
-              <input type="text" id="cust-name" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-emerald-500 focus:outline-none" placeholder="Enter full name" />
-            </div>
-
-            <div>
-              <label class="block text-xs font-bold text-slate-300 uppercase mb-2">Email Address *</label>
-              <input type="email" id="cust-email" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-slate-300 text-sm focus:border-emerald-500 focus:outline-none" readonly />
-            </div>
-
-            <div class="md:col-span-2">
-              <label class="block text-xs font-bold text-slate-300 uppercase mb-2">Phone Number (Required for Delivery Boy) *</label>
-              <div class="flex">
-                <span class="inline-flex items-center px-4 rounded-l-xl border border-r-0 border-slate-700 bg-slate-900/60 text-slate-400 text-sm font-semibold">
-                  🇧🇩 +880
-                </span>
-                <input type="tel" id="cust-phone" required pattern="[0-9]{10,11}" placeholder="1712345678" class="flex-1 bg-slate-900 border border-slate-700 rounded-r-xl px-4 py-3 text-white text-sm focus:border-emerald-500 focus:outline-none" />
-              </div>
-              <p class="text-[11px] text-slate-400 mt-1">Our delivery rider will call this number before arriving at dawn.</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- 2. Doorstep Address & Exact GPS Location Card -->
-        <div class="bg-slate-800/80 border border-slate-700 rounded-3xl p-6 md:p-8">
-          <h3 class="text-lg md:text-xl font-black mb-1 flex items-center gap-2">
-            <span>📍</span> <span>2. Doorstep Delivery Location</span>
-          </h3>
-          <p class="text-slate-400 text-xs md:text-sm mb-6">
-            Provide your exact street address or use the GPS locator so our delivery rider finds your apartment or house without calling back and forth.
-          </p>
-
-          <!-- GPS Location Feature Box -->
-          <div class="bg-gradient-to-r from-emerald-950/40 via-slate-900 to-slate-900 border border-emerald-500/40 rounded-2xl p-5 mb-6">
-            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div>
-                <span class="inline-block bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full mb-1">
-                  High-Precision GPS
-                </span>
-                <h4 class="font-bold text-white text-sm md:text-base">Get Exact Current Location</h4>
-                <p class="text-xs text-slate-400 mt-0.5">Captures your precise device latitude & longitude coordinates for our rider.</p>
-              </div>
-
-              <button type="button" id="detect-location-btn" onclick="detectCurrentLocation()" class="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs md:text-sm px-5 py-3 rounded-xl transition shadow-lg shadow-emerald-500/20 active:scale-95 shrink-0">
-                <span id="loc-btn-icon">📍</span>
-                <span id="loc-btn-text">Detect My Current Location</span>
-              </button>
-            </div>
-
-            <!-- GPS Status / Coordinate Result Display -->
-            <div id="gps-result-box" class="hidden mt-4 pt-4 border-t border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
-              <div class="space-y-1">
-                <div class="flex items-center gap-2">
-                  <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                  <span class="text-emerald-300 font-bold">GPS Coordinates Locked</span>
-                  <span id="gps-accuracy-badge" class="bg-slate-800 text-slate-300 px-2 py-0.5 rounded text-[10px]"></span>
-                </div>
-                <div class="font-mono text-slate-300" id="gps-coords-text">Lat: --, Lng: --</div>
-              </div>
-              <a id="gps-maps-link" href="#" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 text-sky-400 hover:text-sky-300 underline font-semibold">
-                <span>View Pin on Google Maps</span>
-                <span>↗</span>
-              </a>
-            </div>
-          </div>
-
-          <!-- Street Address Fields -->
-          <div class="space-y-4">
-            <div>
-              <label class="block text-xs font-bold text-slate-300 uppercase mb-2">Street Address / House / Flat / Road *</label>
-              <textarea id="cust-address" required rows="2" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-emerald-500 focus:outline-none" placeholder="e.g., Flat 4B, House 12, Road 5, Block C"></textarea>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label class="block text-xs font-bold text-slate-300 uppercase mb-2">Area / Neighborhood *</label>
-                <input type="text" id="cust-area" required placeholder="e.g., Uttara, Gulshan, Dhanmondi, Sirajganj Sadar" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-emerald-500 focus:outline-none" />
-              </div>
-              <div>
-                <label class="block text-xs font-bold text-slate-300 uppercase mb-2">City / District *</label>
-                <select id="cust-city" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-emerald-500 focus:outline-none">
-                  <option value="Dhaka">Dhaka</option>
-                  <option value="Sirajganj">Sirajganj</option>
-                  <option value="Gazipur">Gazipur</option>
-                  <option value="Narayanganj">Narayanganj</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 3. Fresh Products & Delivery Schedule Card -->
-        <div class="bg-slate-800/80 border border-slate-700 rounded-3xl p-6 md:p-8">
-          <h3 class="text-lg md:text-xl font-black mb-1 flex items-center gap-2">
-            <span>🛒</span> <span>3. Select Items & Morning Time Slot</span>
-          </h3>
-          <p class="text-slate-400 text-xs md:text-sm mb-6">
-            Choose what you'd like delivered fresh from the pasture tomorrow morning.
+            Select the dairy items you would like delivered fresh from the pasture to your doorstep tomorrow morning.
           </p>
 
           <!-- Products Selection -->
@@ -280,6 +186,189 @@
               </div>
             </div>
           </div>
+
+          <!-- Morning Delivery Time Slot -->
+          <div class="mb-6">
+            <label class="block text-xs font-bold text-slate-300 uppercase mb-3">Preferred Morning Delivery Window</label>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <label class="cursor-pointer">
+                <input type="radio" name="slot" value="5:30 AM - 6:30 AM" checked class="peer sr-only" />
+                <div class="peer-checked:border-emerald-500 peer-checked:bg-emerald-950/30 border border-slate-700 bg-slate-900 rounded-xl p-3 text-center transition">
+                  <div class="text-xs font-extrabold text-emerald-400">🌅 5:30 - 6:30 AM</div>
+                  <div class="text-[11px] text-slate-400 mt-0.5">Sunrise Early</div>
+                </div>
+              </label>
+
+              <label class="cursor-pointer">
+                <input type="radio" name="slot" value="6:30 AM - 7:30 AM" class="peer sr-only" />
+                <div class="peer-checked:border-emerald-500 peer-checked:bg-emerald-950/30 border border-slate-700 bg-slate-900 rounded-xl p-3 text-center transition">
+                  <div class="text-xs font-extrabold text-emerald-400">☕ 6:30 - 7:30 AM</div>
+                  <div class="text-[11px] text-slate-400 mt-0.5">Breakfast Ready</div>
+                </div>
+              </label>
+
+              <label class="cursor-pointer">
+                <input type="radio" name="slot" value="7:30 AM - 8:30 AM" class="peer sr-only" />
+                <div class="peer-checked:border-emerald-500 peer-checked:bg-emerald-950/30 border border-slate-700 bg-slate-900 rounded-xl p-3 text-center transition">
+                  <div class="text-xs font-extrabold text-emerald-400">☀️ 7:30 - 8:30 AM</div>
+                  <div class="text-[11px] text-slate-400 mt-0.5">Morning Standard</div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Special Instructions -->
+          <div>
+            <label class="block text-xs font-bold text-slate-300 uppercase mb-2">Delivery Rider Instructions (Optional)</label>
+            <input type="text" id="cust-notes" placeholder="e.g. Please ring bell once and leave insulated bag outside door" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-emerald-500 focus:outline-none" />
+          </div>
+
+          <!-- Price Calculation Box -->
+          <div class="mt-6 pt-6 border-t border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div>
+              <div class="text-xs text-slate-400">Estimated Total (Cash on Delivery / bKash)</div>
+              <div class="text-2xl md:text-3xl font-black text-emerald-400" id="total-price-text">৳120</div>
+            </div>
+
+            <button type="submit" id="submit-order-btn" class="w-full sm:w-auto bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-slate-950 font-black text-base px-8 py-4 rounded-2xl shadow-xl shadow-emerald-500/20 active:scale-95 transition cursor-pointer flex items-center justify-center gap-2">
+              <span>Confirm Order & Save to Database</span>
+              <span>→</span>
+            </button>
+          </div>
+        </div>
+
+      </form>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- BIG POPUP REGISTRATION MODAL                  -->
+    <!-- ============================================== -->
+    <div id="registration-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md hidden flex items-center justify-center p-4 overflow-y-auto">
+      <div class="bg-slate-900 border border-slate-700/80 rounded-3xl max-w-2xl w-full p-6 md:p-8 shadow-2xl my-8 relative">
+        
+        <!-- Modal Header -->
+        <div class="flex items-start justify-between gap-4 mb-6 pb-4 border-b border-slate-800">
+          <div class="flex items-center gap-3">
+            <img id="modal-user-photo" src="" alt="Avatar" class="w-12 h-12 rounded-full border-2 border-emerald-500 object-cover" />
+            <div>
+              <span class="inline-block bg-emerald-500/20 text-emerald-400 text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full mb-1">
+                Step 2: Customer Registration
+              </span>
+              <h3 class="text-xl md:text-2xl font-black text-white">Complete Delivery Profile</h3>
+              <p class="text-xs text-slate-400">Please provide your mobile and doorstep address for our morning delivery rider.</p>
+            </div>
+          </div>
+          <button type="button" onclick="closeRegistrationModal()" class="text-slate-400 hover:text-white text-2xl font-bold p-1">×</button>
+        </div>
+
+        <form id="registration-form" onsubmit="handleRegistrationSave(event)" class="space-y-6">
+          
+          <!-- 1. Google Account Verified Info -->
+          <div class="bg-slate-950/60 border border-slate-800 rounded-2xl p-4">
+            <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center justify-between">
+              <span>1. Information from Google Account</span>
+              <span class="text-emerald-400 font-semibold flex items-center gap-1 text-[11px]">
+                <span>✓</span> Verified Google Account
+              </span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-300 uppercase mb-1.5">Recipient Full Name *</label>
+                <input type="text" id="cust-name" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:border-emerald-500 focus:outline-none" placeholder="Your full name" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-300 uppercase mb-1.5">Google Email Address</label>
+                <input type="email" id="cust-email" required class="w-full bg-slate-900/60 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-400 text-sm focus:outline-none cursor-not-allowed" readonly />
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. Doorstep & Exact GPS Location -->
+          <div class="space-y-4">
+            <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">
+              2. Doorstep Contact & Exact GPS Location
+            </div>
+
+            <!-- Phone Number -->
+            <div>
+              <label class="block text-xs font-bold text-slate-300 uppercase mb-1.5">Mobile Phone Number (Required for Rider) *</label>
+              <div class="flex">
+                <span class="inline-flex items-center px-4 rounded-l-xl border border-r-0 border-slate-700 bg-slate-950/70 text-slate-400 text-sm font-semibold">
+                  🇧🇩 +880
+                </span>
+                <input type="tel" id="cust-phone" required pattern="[0-9]{10,11}" placeholder="1712345678" class="flex-1 bg-slate-900 border border-slate-700 rounded-r-xl px-4 py-2.5 text-white text-sm focus:border-emerald-500 focus:outline-none" />
+              </div>
+              <p class="text-[11px] text-slate-500 mt-1">Our rider will call this number before arriving at dawn.</p>
+            </div>
+
+            <!-- High-Precision GPS Locator -->
+            <div class="bg-gradient-to-r from-emerald-950/40 via-slate-900 to-slate-900 border border-emerald-500/40 rounded-2xl p-4">
+              <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div>
+                  <span class="inline-block bg-emerald-500/20 text-emerald-400 text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full mb-1">
+                    High-Precision GPS
+                  </span>
+                  <h4 class="font-bold text-white text-sm">Detect Exact Current Location</h4>
+                  <p class="text-[11px] text-slate-400">Captures your coordinates so our rider can navigate directly to your gate.</p>
+                </div>
+                <button type="button" id="detect-location-btn" onclick="detectCurrentLocation()" class="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs px-4 py-2.5 rounded-xl transition shadow-lg shadow-emerald-500/20 active:scale-95 shrink-0">
+                  <span id="loc-btn-icon">📍</span>
+                  <span id="loc-btn-text">Detect My Location</span>
+                </button>
+              </div>
+
+              <!-- GPS Result Box -->
+              <div id="gps-result-box" class="hidden mt-3 pt-3 border-t border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs">
+                <div class="space-y-0.5">
+                  <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span class="text-emerald-300 font-bold">GPS Coordinates Locked</span>
+                    <span id="gps-accuracy-badge" class="bg-slate-800 text-slate-300 px-2 py-0.5 rounded text-[10px]"></span>
+                  </div>
+                  <div class="font-mono text-slate-300 text-[11px]" id="gps-coords-text">Lat: --, Lng: --</div>
+                </div>
+                <a id="gps-maps-link" href="#" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-sky-400 hover:text-sky-300 underline font-semibold text-[11px]">
+                  <span>View Pin on Google Maps</span> <span>↗</span>
+                </a>
+              </div>
+            </div>
+
+            <!-- Street Address Fields -->
+            <div>
+              <label class="block text-xs font-bold text-slate-300 uppercase mb-1.5">House / Flat / Road / Street Address *</label>
+              <textarea id="cust-address" required rows="2" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:border-emerald-500 focus:outline-none" placeholder="e.g., Flat 4B, House 12, Road 5, Block C"></textarea>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-300 uppercase mb-1.5">Area / Neighborhood *</label>
+                <input type="text" id="cust-area" required placeholder="e.g., Uttara, Gulshan, Dhanmondi, Sirajganj Sadar" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:border-emerald-500 focus:outline-none" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-300 uppercase mb-1.5">City / District *</label>
+                <select id="cust-city" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:border-emerald-500 focus:outline-none">
+                  <option value="Dhaka">Dhaka</option>
+                  <option value="Sirajganj">Sirajganj</option>
+                  <option value="Gazipur">Gazipur</option>
+                  <option value="Narayanganj">Narayanganj</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Modal Footer Buttons -->
+          <div class="pt-4 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <button type="button" onclick="closeRegistrationModal()" class="w-full sm:w-auto text-xs text-slate-400 hover:text-white px-4 py-2">
+              Cancel
+            </button>
+            <button type="submit" id="save-profile-btn" class="w-full sm:w-auto bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-slate-950 font-black text-sm px-7 py-3 rounded-xl shadow-xl shadow-emerald-500/20 active:scale-95 transition flex items-center justify-center gap-2">
+              <span>Save Profile & Continue to Order</span>
+              <span>→</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
 
           <!-- Morning Delivery Time Slot -->
           <div class="mb-6">
@@ -472,6 +561,99 @@
       }
     }
 
+    // Modal controller
+    function openRegistrationModal(show) {
+      const modal = document.getElementById("registration-modal");
+      if (show) {
+        modal.classList.remove("hidden");
+        document.body.style.overflow = "hidden";
+      } else {
+        modal.classList.add("hidden");
+        document.body.style.overflow = "";
+      }
+    }
+
+    function closeRegistrationModal() {
+      const phone = document.getElementById("cust-phone").value.trim();
+      const addr = document.getElementById("cust-address").value.trim();
+      if (!phone || !addr) {
+        if (!confirm("Your delivery address is not saved yet. Do you want to close this window?")) {
+          return;
+        }
+      }
+      openRegistrationModal(false);
+    }
+
+    // Save Registration Popup Data
+    async function handleRegistrationSave(e) {
+      e.preventDefault();
+      const name = document.getElementById("cust-name").value.trim();
+      const email = document.getElementById("cust-email").value.trim();
+      const phoneRaw = document.getElementById("cust-phone").value.trim();
+      const address = document.getElementById("cust-address").value.trim();
+      const area = document.getElementById("cust-area").value.trim();
+      const city = document.getElementById("cust-city").value;
+
+      if (!phoneRaw) {
+        alert("Please provide your active mobile phone number.");
+        return;
+      }
+      if (!address || !area) {
+        alert("Please provide your street address and area.");
+        return;
+      }
+
+      const phone = "+880" + phoneRaw;
+      const saveBtn = document.getElementById("save-profile-btn");
+      saveBtn.disabled = true;
+      saveBtn.innerHTML = `<span>Saving Profile...</span>`;
+
+      // Save customer profile to Firestore
+      try {
+        if (db && currentUser && currentUser.uid) {
+          await db.collection("customers").doc(currentUser.uid).set({
+            name: name,
+            email: email,
+            phone: phone,
+            lastAddress: address,
+            lastArea: area,
+            lastCity: city,
+            lastLocation: detectedLocation || null,
+            updatedAt: new Date().toISOString()
+          }, { merge: true });
+        }
+      } catch (err) {
+        console.warn("Could not save customer profile to Firestore:", err);
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = `<span>Save Profile & Continue to Order</span> <span>→</span>`;
+      }
+
+      // Update Summary Banner on Main Order Page
+      updateSummaryCard(name, email, phone, `${address}, ${area}, ${city}`);
+
+      // Close Modal and reveal order section
+      openRegistrationModal(false);
+      document.getElementById("order-flow-section").classList.remove("hidden");
+      updateStepIndicators(3);
+    }
+
+    function updateSummaryCard(name, email, phone, fullAddress) {
+      document.getElementById("summary-cust-name").textContent = name;
+      document.getElementById("summary-cust-phone").textContent = phone;
+      document.getElementById("summary-cust-email").textContent = email;
+      document.getElementById("summary-cust-address").textContent = fullAddress;
+
+      const gpsBadge = document.getElementById("summary-gps-badge");
+      if (detectedLocation && detectedLocation.latitude) {
+        gpsBadge.innerHTML = `<a href="${detectedLocation.googleMapsUrl}" target="_blank" class="underline">📍 GPS Locked (${detectedLocation.accuracy}m) ↗</a>`;
+        gpsBadge.className = "bg-emerald-500/20 text-emerald-300 text-[10px] font-bold px-2.5 py-0.5 rounded-full";
+      } else {
+        gpsBadge.textContent = "📍 Address Confirmed";
+        gpsBadge.className = "bg-slate-700 text-slate-300 text-[10px] font-bold px-2.5 py-0.5 rounded-full";
+      }
+    }
+
     // Handle Authenticated State
     function handleUserAuthenticated(user) {
       currentUser = user;
@@ -486,12 +668,11 @@
         </div>
       `;
 
-      // Fill in Registration Form
+      // Fill in Google details in the Registration Modal & Summary
+      document.getElementById("modal-user-photo").src = user.photoURL;
+      document.getElementById("summary-user-photo").src = user.photoURL;
       document.getElementById("cust-name").value = user.displayName;
       document.getElementById("cust-email").value = user.email;
-      document.getElementById("user-display-name").textContent = user.displayName;
-      document.getElementById("user-display-email").textContent = user.email;
-      document.getElementById("user-photo").src = user.photoURL;
 
       // Switch step visibility
       document.getElementById("auth-section").classList.add("hidden");
@@ -501,27 +682,38 @@
       // Auto-load previous delivery details if returning customer in Firestore
       if (db && user && user.uid) {
         db.collection("customers").doc(user.uid).get().then((doc) => {
-          if (doc.exists) {
+          if (doc.exists && doc.data().phone && doc.data().lastAddress) {
             const data = doc.data();
-            if (data.phone) {
-              const rawPhone = data.phone.replace("+880", "").trim();
-              if (rawPhone) document.getElementById("cust-phone").value = rawPhone;
+            const rawPhone = data.phone.replace("+880", "").trim();
+            document.getElementById("cust-phone").value = rawPhone;
+            document.getElementById("cust-address").value = data.lastAddress;
+            document.getElementById("cust-area").value = data.lastArea || "";
+            document.getElementById("cust-city").value = data.lastCity || "Dhaka";
+            if (data.lastLocation) {
+              detectedLocation = data.lastLocation;
             }
-            if (data.lastAddress && !document.getElementById("cust-address").value) {
-              document.getElementById("cust-address").value = data.lastAddress;
-            }
-            if (data.lastArea && !document.getElementById("cust-area").value) {
-              document.getElementById("cust-area").value = data.lastArea;
-            }
-            if (data.lastCity) {
-              document.getElementById("cust-city").value = data.lastCity;
-            }
-          }
-        }).catch(err => console.log("Customer history lookup:", err));
-      }
 
-      // Update Step Indicators
-      updateStepIndicators(2);
+            updateSummaryCard(
+              data.name || user.displayName, 
+              user.email, 
+              data.phone, 
+              `${data.lastAddress}, ${data.lastArea || ''}, ${data.lastCity || 'Dhaka'}`
+            );
+            updateStepIndicators(3);
+          } else {
+            // New customer or missing address: open BIG REGISTRATION POPUP immediately!
+            openRegistrationModal(true);
+            updateStepIndicators(2);
+          }
+        }).catch(err => {
+          console.log("Customer history lookup:", err);
+          openRegistrationModal(true);
+          updateStepIndicators(2);
+        });
+      } else {
+        openRegistrationModal(true);
+        updateStepIndicators(2);
+      }
     }
 
     // Sign Out Action
@@ -660,6 +852,14 @@
     // Submit Order & Save to Firebase Database
     async function handleOrderSubmit(e) {
       e.preventDefault();
+
+      const phoneRaw = document.getElementById("cust-phone").value.trim();
+      const address = document.getElementById("cust-address").value.trim();
+      if (!phoneRaw || !address) {
+        alert("Please complete your delivery address and contact information first.");
+        openRegistrationModal(true);
+        return;
+      }
 
       const total = recalcTotal();
       if (total <= 0) {
