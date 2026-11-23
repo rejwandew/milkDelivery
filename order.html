@@ -243,116 +243,93 @@
     <!-- ============================================== -->
     <!-- BIG POPUP REGISTRATION MODAL                  -->
     <!-- ============================================== -->
-    <div id="registration-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md hidden flex items-center justify-center p-4 overflow-y-auto">
-      <div class="bg-slate-900 border border-slate-700/80 rounded-3xl max-w-2xl w-full p-6 md:p-8 shadow-2xl my-8 relative">
+    <div id="registration-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md hidden overflow-y-auto p-4 sm:p-6 md:p-8 flex justify-center items-start">
+      <div class="bg-slate-900 border border-slate-700/80 rounded-3xl max-w-xl w-full p-6 md:p-8 shadow-2xl my-auto relative">
         
         <!-- Modal Header -->
         <div class="flex items-start justify-between gap-4 mb-6 pb-4 border-b border-slate-800">
           <div class="flex items-center gap-3">
-            <img id="modal-user-photo" src="" alt="Avatar" class="w-12 h-12 rounded-full border-2 border-emerald-500 object-cover" />
+            <img id="modal-user-photo" src="" alt="Avatar" class="w-12 h-12 rounded-full border-2 border-emerald-500 object-cover shrink-0" />
             <div>
-              <span class="inline-block bg-emerald-500/20 text-emerald-400 text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full mb-1">
-                Step 2: Customer Registration
-              </span>
-              <h3 class="text-xl md:text-2xl font-black text-white">Complete Delivery Profile</h3>
-              <p class="text-xs text-slate-400">Please provide your mobile and doorstep address for our morning delivery rider.</p>
+              <div class="flex items-center gap-1.5 text-emerald-400 text-[11px] font-bold mb-0.5">
+                <span>✓</span> <span>Google Account Verified</span>
+              </div>
+              <h3 class="text-xl md:text-2xl font-black text-white">Doorstep Delivery Address</h3>
+              <p class="text-xs text-slate-400">Please provide your mobile and delivery location for our rider.</p>
             </div>
           </div>
-          <button type="button" onclick="closeRegistrationModal()" class="text-slate-400 hover:text-white text-2xl font-bold p-1">×</button>
+          <button type="button" onclick="closeRegistrationModal()" class="text-slate-400 hover:text-white text-2xl font-bold p-1 leading-none">×</button>
         </div>
 
-        <form id="registration-form" onsubmit="handleRegistrationSave(event)" class="space-y-6">
+        <form id="registration-form" onsubmit="handleRegistrationSave(event)" class="space-y-5">
           
-          <!-- 1. Google Account Verified Info -->
-          <div class="bg-slate-950/60 border border-slate-800 rounded-2xl p-4">
-            <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center justify-between">
-              <span>1. Information from Google Account</span>
-              <span class="text-emerald-400 font-semibold flex items-center gap-1 text-[11px]">
-                <span>✓</span> Verified Google Account
+          <!-- Implicit Google Account Data (Hidden Inputs) -->
+          <input type="hidden" id="cust-name" />
+          <input type="hidden" id="cust-email" />
+
+          <!-- Phone Number -->
+          <div>
+            <label class="block text-xs font-bold text-slate-300 uppercase mb-1.5">Mobile Phone Number (Required for Rider) *</label>
+            <div class="flex">
+              <span class="inline-flex items-center px-4 rounded-l-xl border border-r-0 border-slate-700 bg-slate-950/70 text-slate-400 text-sm font-semibold">
+                🇧🇩 +880
               </span>
+              <input type="tel" id="cust-phone" required pattern="[0-9]{10,11}" placeholder="1712345678" class="flex-1 bg-slate-900 border border-slate-700 rounded-r-xl px-4 py-2.5 text-white text-sm focus:border-emerald-500 focus:outline-none" />
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <p class="text-[11px] text-slate-500 mt-1">Our rider will call this number before arriving at dawn.</p>
+          </div>
+
+          <!-- High-Precision GPS Locator -->
+          <div class="bg-gradient-to-r from-emerald-950/40 via-slate-900 to-slate-900 border border-emerald-500/40 rounded-2xl p-4">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div>
-                <label class="block text-xs font-bold text-slate-300 uppercase mb-1.5">Recipient Full Name *</label>
-                <input type="text" id="cust-name" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:border-emerald-500 focus:outline-none" placeholder="Your full name" />
+                <span class="inline-block bg-emerald-500/20 text-emerald-400 text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full mb-1">
+                  High-Precision GPS
+                </span>
+                <h4 class="font-bold text-white text-sm">Pin Exact Current Location</h4>
+                <p class="text-[11px] text-slate-400">Captures your coordinates so our rider can navigate directly to your gate.</p>
               </div>
-              <div>
-                <label class="block text-xs font-bold text-slate-300 uppercase mb-1.5">Google Email Address</label>
-                <input type="email" id="cust-email" required class="w-full bg-slate-900/60 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-400 text-sm focus:outline-none cursor-not-allowed" readonly />
+              <button type="button" id="detect-location-btn" onclick="detectCurrentLocation()" class="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs px-4 py-2.5 rounded-xl transition shadow-lg shadow-emerald-500/20 active:scale-95 shrink-0">
+                <span id="loc-btn-icon">📍</span>
+                <span id="loc-btn-text">Detect My Location</span>
+              </button>
+            </div>
+
+            <!-- GPS Result Box -->
+            <div id="gps-result-box" class="hidden mt-3 pt-3 border-t border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs">
+              <div class="space-y-0.5">
+                <div class="flex items-center gap-2">
+                  <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span class="text-emerald-300 font-bold">GPS Coordinates Locked</span>
+                  <span id="gps-accuracy-badge" class="bg-slate-800 text-slate-300 px-2 py-0.5 rounded text-[10px]"></span>
+                </div>
+                <div class="font-mono text-slate-300 text-[11px]" id="gps-coords-text">Lat: --, Lng: --</div>
               </div>
+              <a id="gps-maps-link" href="#" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-sky-400 hover:text-sky-300 underline font-semibold text-[11px]">
+                <span>View Pin on Google Maps</span> <span>↗</span>
+              </a>
             </div>
           </div>
 
-          <!-- 2. Doorstep & Exact GPS Location -->
-          <div class="space-y-4">
-            <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              2. Doorstep Contact & Exact GPS Location
-            </div>
+          <!-- Street Address Fields -->
+          <div>
+            <label class="block text-xs font-bold text-slate-300 uppercase mb-1.5">House / Flat / Road / Street Address *</label>
+            <textarea id="cust-address" required rows="2" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:border-emerald-500 focus:outline-none" placeholder="e.g., Flat 4B, House 12, Road 5, Block C"></textarea>
+          </div>
 
-            <!-- Phone Number -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label class="block text-xs font-bold text-slate-300 uppercase mb-1.5">Mobile Phone Number (Required for Rider) *</label>
-              <div class="flex">
-                <span class="inline-flex items-center px-4 rounded-l-xl border border-r-0 border-slate-700 bg-slate-950/70 text-slate-400 text-sm font-semibold">
-                  🇧🇩 +880
-                </span>
-                <input type="tel" id="cust-phone" required pattern="[0-9]{10,11}" placeholder="1712345678" class="flex-1 bg-slate-900 border border-slate-700 rounded-r-xl px-4 py-2.5 text-white text-sm focus:border-emerald-500 focus:outline-none" />
-              </div>
-              <p class="text-[11px] text-slate-500 mt-1">Our rider will call this number before arriving at dawn.</p>
+              <label class="block text-xs font-bold text-slate-300 uppercase mb-1.5">Area / Neighborhood *</label>
+              <input type="text" id="cust-area" required placeholder="e.g., Kazipara, Mirpur, Uttara, Dhanmondi" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:border-emerald-500 focus:outline-none" />
             </div>
-
-            <!-- High-Precision GPS Locator -->
-            <div class="bg-gradient-to-r from-emerald-950/40 via-slate-900 to-slate-900 border border-emerald-500/40 rounded-2xl p-4">
-              <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                <div>
-                  <span class="inline-block bg-emerald-500/20 text-emerald-400 text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full mb-1">
-                    High-Precision GPS
-                  </span>
-                  <h4 class="font-bold text-white text-sm">Detect Exact Current Location</h4>
-                  <p class="text-[11px] text-slate-400">Captures your coordinates so our rider can navigate directly to your gate.</p>
-                </div>
-                <button type="button" id="detect-location-btn" onclick="detectCurrentLocation()" class="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs px-4 py-2.5 rounded-xl transition shadow-lg shadow-emerald-500/20 active:scale-95 shrink-0">
-                  <span id="loc-btn-icon">📍</span>
-                  <span id="loc-btn-text">Detect My Location</span>
-                </button>
-              </div>
-
-              <!-- GPS Result Box -->
-              <div id="gps-result-box" class="hidden mt-3 pt-3 border-t border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs">
-                <div class="space-y-0.5">
-                  <div class="flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                    <span class="text-emerald-300 font-bold">GPS Coordinates Locked</span>
-                    <span id="gps-accuracy-badge" class="bg-slate-800 text-slate-300 px-2 py-0.5 rounded text-[10px]"></span>
-                  </div>
-                  <div class="font-mono text-slate-300 text-[11px]" id="gps-coords-text">Lat: --, Lng: --</div>
-                </div>
-                <a id="gps-maps-link" href="#" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-sky-400 hover:text-sky-300 underline font-semibold text-[11px]">
-                  <span>View Pin on Google Maps</span> <span>↗</span>
-                </a>
-              </div>
-            </div>
-
-            <!-- Street Address Fields -->
             <div>
-              <label class="block text-xs font-bold text-slate-300 uppercase mb-1.5">House / Flat / Road / Street Address *</label>
-              <textarea id="cust-address" required rows="2" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:border-emerald-500 focus:outline-none" placeholder="e.g., Flat 4B, House 12, Road 5, Block C"></textarea>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label class="block text-xs font-bold text-slate-300 uppercase mb-1.5">Area / Neighborhood *</label>
-                <input type="text" id="cust-area" required placeholder="e.g., Uttara, Gulshan, Dhanmondi, Sirajganj Sadar" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:border-emerald-500 focus:outline-none" />
-              </div>
-              <div>
-                <label class="block text-xs font-bold text-slate-300 uppercase mb-1.5">City / District *</label>
-                <select id="cust-city" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:border-emerald-500 focus:outline-none">
-                  <option value="Dhaka">Dhaka</option>
-                  <option value="Sirajganj">Sirajganj</option>
-                  <option value="Gazipur">Gazipur</option>
-                  <option value="Narayanganj">Narayanganj</option>
-                </select>
-              </div>
+              <label class="block text-xs font-bold text-slate-300 uppercase mb-1.5">City / District *</label>
+              <select id="cust-city" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:border-emerald-500 focus:outline-none">
+                <option value="Dhaka">Dhaka</option>
+                <option value="Sirajganj">Sirajganj</option>
+                <option value="Gazipur">Gazipur</option>
+                <option value="Narayanganj">Narayanganj</option>
+              </select>
             </div>
           </div>
 
@@ -362,7 +339,7 @@
               Cancel
             </button>
             <button type="submit" id="save-profile-btn" class="w-full sm:w-auto bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-slate-950 font-black text-sm px-7 py-3 rounded-xl shadow-xl shadow-emerald-500/20 active:scale-95 transition flex items-center justify-center gap-2">
-              <span>Save Profile & Continue to Order</span>
+              <span>Save Address & Continue to Order</span>
               <span>→</span>
             </button>
           </div>
@@ -587,8 +564,11 @@
     // Save Registration Popup Data
     async function handleRegistrationSave(e) {
       e.preventDefault();
-      const name = document.getElementById("cust-name").value.trim();
-      const email = document.getElementById("cust-email").value.trim();
+      const name = (currentUser && currentUser.displayName) ? currentUser.displayName : (document.getElementById("cust-name").value.trim() || "Customer");
+      const email = (currentUser && currentUser.email) ? currentUser.email : (document.getElementById("cust-email").value.trim() || "");
+      document.getElementById("cust-name").value = name;
+      document.getElementById("cust-email").value = email;
+
       const phoneRaw = document.getElementById("cust-phone").value.trim();
       const address = document.getElementById("cust-address").value.trim();
       const area = document.getElementById("cust-area").value.trim();
@@ -753,7 +733,7 @@
       }
     }
 
-    // Exact GPS Geolocation Detection
+    // Exact GPS Geolocation Detection with smart fallback
     function detectCurrentLocation() {
       const btnText = document.getElementById("loc-btn-text");
       const btnIcon = document.getElementById("loc-btn-icon");
@@ -767,37 +747,36 @@
         return;
       }
 
-      btnText.textContent = "Acquiring GPS Signal...";
+      btnText.textContent = "Acquiring Location...";
       btnIcon.textContent = "🛰️";
 
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const lat = position.coords.latitude;
-          const lng = position.coords.longitude;
-          const accuracy = Math.round(position.coords.accuracy);
+      function onPositionSuccess(position) {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        const accuracy = Math.round(position.coords.accuracy);
 
-          const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
-          detectedLocation = {
-            latitude: lat,
-            longitude: lng,
-            accuracy: accuracy,
-            googleMapsUrl: mapsUrl,
-            timestamp: new Date().toISOString()
-          };
+        const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+        detectedLocation = {
+          latitude: lat,
+          longitude: lng,
+          accuracy: accuracy,
+          googleMapsUrl: mapsUrl,
+          timestamp: new Date().toISOString()
+        };
 
-          btnText.textContent = "Location Detected!";
-          btnIcon.textContent = "✓";
-          resultBox.classList.remove("hidden");
-          coordsText.textContent = `Lat: ${lat.toFixed(6)}°, Lng: ${lng.toFixed(6)}°`;
-          accuracyBadge.textContent = `±${accuracy}m precision`;
+        btnText.textContent = "Location Detected!";
+        btnIcon.textContent = "✓";
+        resultBox.classList.remove("hidden");
+        coordsText.textContent = `Lat: ${lat.toFixed(6)}°, Lng: ${lng.toFixed(6)}°`;
+        accuracyBadge.textContent = `±${accuracy}m precision`;
 
-          // Generate Google Maps pin link
-          mapsLink.href = mapsUrl;
+        // Generate Google Maps pin link
+        mapsLink.href = mapsUrl;
 
-          // Attempt OpenStreetMap reverse geocoding to auto-fill street address
-          try {
-            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
-            const data = await res.json();
+        // Attempt OpenStreetMap reverse geocoding to auto-fill street address
+        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`)
+          .then(res => res.json())
+          .then(data => {
             if (data && data.address) {
               const road = data.address.road || data.address.residential || "";
               const suburb = data.address.suburb || data.address.neighbourhood || "";
@@ -810,25 +789,51 @@
                 document.getElementById("cust-area").value = suburb;
               }
             }
-          } catch (e) {
-            console.log("Reverse geocode silent fallback:", e);
-          }
-        },
-        (error) => {
-          btnText.textContent = "Retry Location Detection";
-          btnIcon.textContent = "⚠️";
-          console.warn("Geolocation error:", error);
-          if (error.code === 1) {
-            alert("Location permission was denied. Please allow location permissions in your browser or type your address manually.");
-          } else {
-            alert("Unable to acquire GPS coordinates: " + error.message);
-          }
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 12000,
-          maximumAge: 0
+          })
+          .catch(e => console.log("Reverse geocode fallback:", e));
+      }
+
+      function onPositionError(error, isHighAccuracyRetry) {
+        console.warn("Geolocation attempt error:", error);
+
+        // If high accuracy failed (common on laptops/PCs without hardware GPS), retry with standard network positioning
+        if (isHighAccuracyRetry && (error.code === 2 || error.code === 3)) {
+          btnText.textContent = "Retrying via network...";
+          navigator.geolocation.getCurrentPosition(
+            onPositionSuccess,
+            (fallbackErr) => onPositionError(fallbackErr, false),
+            { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
+          );
+          return;
         }
+
+        btnText.textContent = "Retry Location";
+        btnIcon.textContent = "⚠️";
+
+        if (error.code === 1) { // PERMISSION_DENIED
+          alert(
+            "📍 Location Access Blocked:\n\n" +
+            "1. Click the Tune/Padlock icon on the left of your browser address bar.\n" +
+            "2. Switch 'Location' from Blocked to 'Allow'.\n" +
+            "3. Or simply type your street address below — GPS is optional!"
+          );
+        } else if (error.code === 2) { // POSITION_UNAVAILABLE
+          alert(
+            "📍 Device Location Services are Turned Off:\n\n" +
+            "• On Windows: Open Windows Settings > Privacy & security > Location, and turn 'Location services' ON.\n" +
+            "• On Phone: Pull down the notification bar and turn 'Location/GPS' ON.\n\n" +
+            "Tip: You can also just type your house & road address below without turning on GPS!"
+          );
+        } else { // TIMEOUT or other
+          alert("Could not acquire GPS signal in time. Please enter your house and road address manually.");
+        }
+      }
+
+      // Try with high accuracy first
+      navigator.geolocation.getCurrentPosition(
+        onPositionSuccess,
+        (err) => onPositionError(err, true),
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       );
     }
 
@@ -873,8 +878,8 @@
 
       const orderData = {
         userId: currentUser ? currentUser.uid : "anonymous",
-        customerName: document.getElementById("cust-name").value.trim(),
-        email: document.getElementById("cust-email").value.trim(),
+        customerName: (currentUser && currentUser.displayName) ? currentUser.displayName : (document.getElementById("cust-name").value.trim() || "Customer"),
+        email: (currentUser && currentUser.email) ? currentUser.email : (document.getElementById("cust-email").value.trim() || ""),
         phone: "+880" + document.getElementById("cust-phone").value.trim(),
         address: document.getElementById("cust-address").value.trim(),
         area: document.getElementById("cust-area").value.trim(),
