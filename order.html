@@ -243,107 +243,88 @@
     <!-- ============================================== -->
     <!-- BIG POPUP REGISTRATION MODAL                  -->
     <!-- ============================================== -->
-    <div id="registration-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md hidden overflow-y-auto p-4 sm:p-6 md:p-8 flex justify-center items-start">
-      <div class="bg-slate-900 border border-slate-700/80 rounded-3xl max-w-xl w-full p-6 md:p-8 shadow-2xl my-auto relative">
-        
-        <!-- Modal Header -->
-        <div class="flex items-start justify-between gap-4 mb-6 pb-4 border-b border-slate-800">
-          <div class="flex items-center gap-3">
-            <img id="modal-user-photo" src="" alt="Avatar" class="w-12 h-12 rounded-full border-2 border-emerald-500 object-cover shrink-0" />
-            <div>
-              <div class="flex items-center gap-1.5 text-emerald-400 text-[11px] font-bold mb-0.5">
-                <span>✓</span> <span>Google Account Verified</span>
-              </div>
-              <h3 class="text-xl md:text-2xl font-black text-white">Doorstep Delivery Address</h3>
-              <p class="text-xs text-slate-400">Please provide your mobile and delivery location for our rider.</p>
-            </div>
-          </div>
-          <button type="button" onclick="closeRegistrationModal()" class="text-slate-400 hover:text-white text-2xl font-bold p-1 leading-none">×</button>
-        </div>
-
-        <form id="registration-form" onsubmit="handleRegistrationSave(event)" class="space-y-5">
+    <div id="registration-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md hidden overflow-y-auto">
+      <div class="min-h-screen flex items-center justify-center p-3 sm:p-6 py-8 sm:py-12">
+        <div class="bg-slate-900 border border-slate-700/80 rounded-2xl sm:rounded-3xl max-w-md sm:max-w-lg w-full p-5 sm:p-7 shadow-2xl relative">
           
-          <!-- Implicit Google Account Data (Hidden Inputs) -->
-          <input type="hidden" id="cust-name" />
-          <input type="hidden" id="cust-email" />
-
-          <!-- Phone Number -->
-          <div>
-            <label class="block text-xs font-bold text-slate-300 uppercase mb-1.5">Mobile Phone Number (Required for Rider) *</label>
-            <div class="flex">
-              <span class="inline-flex items-center px-4 rounded-l-xl border border-r-0 border-slate-700 bg-slate-950/70 text-slate-400 text-sm font-semibold">
-                🇧🇩 +880
-              </span>
-              <input type="tel" id="cust-phone" required pattern="[0-9]{10,11}" placeholder="1712345678" class="flex-1 bg-slate-900 border border-slate-700 rounded-r-xl px-4 py-2.5 text-white text-sm focus:border-emerald-500 focus:outline-none" />
+          <!-- Modal Header (Compact & Always Visible) -->
+          <div class="flex items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-800">
+            <div class="flex items-center gap-2.5">
+              <img id="modal-user-photo" src="" alt="Avatar" class="w-10 h-10 rounded-full border-2 border-emerald-500 object-cover shrink-0" />
+              <div>
+                <div class="flex items-center gap-1.5 text-emerald-400 text-[10px] font-bold">
+                  <span>✓</span> <span>Google Account Verified</span>
+                </div>
+                <h3 class="text-base sm:text-lg font-black text-white leading-tight">Doorstep Delivery Address</h3>
+                <p class="text-[11px] text-slate-400">Where should our rider deliver your morning milk?</p>
+              </div>
             </div>
-            <p class="text-[11px] text-slate-500 mt-1">Our rider will call this number before arriving at dawn.</p>
+            <button type="button" onclick="closeRegistrationModal()" class="text-slate-400 hover:text-white text-xl font-bold p-1 leading-none shrink-0">✕</button>
           </div>
 
-          <!-- High-Precision GPS Locator -->
-          <div class="bg-gradient-to-r from-emerald-950/40 via-slate-900 to-slate-900 border border-emerald-500/40 rounded-2xl p-4">
-            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-              <div>
-                <span class="inline-block bg-emerald-500/20 text-emerald-400 text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full mb-1">
-                  High-Precision GPS
+          <form id="registration-form" onsubmit="handleRegistrationSave(event)" class="space-y-3.5">
+            
+            <!-- Implicit Google Account Data (Hidden Inputs) -->
+            <input type="hidden" id="cust-name" />
+            <input type="hidden" id="cust-email" />
+
+            <!-- Phone Number -->
+            <div>
+              <label class="block text-[11px] font-bold text-slate-300 uppercase mb-1">Mobile Phone (Required for Rider) *</label>
+              <div class="flex">
+                <span class="inline-flex items-center px-3 rounded-l-xl border border-r-0 border-slate-700 bg-slate-950/70 text-slate-400 text-xs font-semibold">
+                  🇧🇩 +880
                 </span>
-                <h4 class="font-bold text-white text-sm">Pin Exact Current Location</h4>
-                <p class="text-[11px] text-slate-400">Captures your coordinates so our rider can navigate directly to your gate.</p>
+                <input type="tel" id="cust-phone" required pattern="[0-9]{10,11}" placeholder="1712345678" class="flex-1 bg-slate-900 border border-slate-700 rounded-r-xl px-3.5 py-2 text-white text-xs sm:text-sm focus:border-emerald-500 focus:outline-none" />
               </div>
-              <button type="button" id="detect-location-btn" onclick="detectCurrentLocation()" class="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs px-4 py-2.5 rounded-xl transition shadow-lg shadow-emerald-500/20 active:scale-95 shrink-0">
+            </div>
+
+            <!-- Compact GPS Locator Row -->
+            <div class="bg-slate-950/70 border border-emerald-500/30 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+              <div class="space-y-0.5">
+                <div class="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">📍 Pin Current Location</div>
+                <div class="text-xs text-slate-300" id="gps-status-inline">Tap to lock GPS pin for the rider</div>
+              </div>
+              <button type="button" id="detect-location-btn" onclick="detectCurrentLocation()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs px-3.5 py-2 rounded-lg transition shadow-md shadow-emerald-500/20 active:scale-95 shrink-0 flex items-center justify-center gap-1.5">
                 <span id="loc-btn-icon">📍</span>
-                <span id="loc-btn-text">Detect My Location</span>
+                <span id="loc-btn-text">Detect GPS</span>
               </button>
             </div>
 
-            <!-- GPS Result Box -->
-            <div id="gps-result-box" class="hidden mt-3 pt-3 border-t border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs">
-              <div class="space-y-0.5">
-                <div class="flex items-center gap-2">
-                  <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                  <span class="text-emerald-300 font-bold">GPS Coordinates Locked</span>
-                  <span id="gps-accuracy-badge" class="bg-slate-800 text-slate-300 px-2 py-0.5 rounded text-[10px]"></span>
-                </div>
-                <div class="font-mono text-slate-300 text-[11px]" id="gps-coords-text">Lat: --, Lng: --</div>
+            <!-- Street Address Fields -->
+            <div>
+              <label class="block text-[11px] font-bold text-slate-300 uppercase mb-1">House / Flat / Road / Street Address *</label>
+              <textarea id="cust-address" required rows="2" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-white text-xs sm:text-sm focus:border-emerald-500 focus:outline-none" placeholder="e.g., Flat 4B, House 12, Road 5, Block C"></textarea>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-[11px] font-bold text-slate-300 uppercase mb-1">Area / Neighborhood *</label>
+                <input type="text" id="cust-area" required placeholder="e.g., Kazipara, Mirpur" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs sm:text-sm focus:border-emerald-500 focus:outline-none" />
               </div>
-              <a id="gps-maps-link" href="#" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-sky-400 hover:text-sky-300 underline font-semibold text-[11px]">
-                <span>View Pin on Google Maps</span> <span>↗</span>
-              </a>
+              <div>
+                <label class="block text-[11px] font-bold text-slate-300 uppercase mb-1">City / District *</label>
+                <select id="cust-city" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs sm:text-sm focus:border-emerald-500 focus:outline-none">
+                  <option value="Dhaka">Dhaka</option>
+                  <option value="Sirajganj">Sirajganj</option>
+                  <option value="Gazipur">Gazipur</option>
+                  <option value="Narayanganj">Narayanganj</option>
+                </select>
+              </div>
             </div>
-          </div>
 
-          <!-- Street Address Fields -->
-          <div>
-            <label class="block text-xs font-bold text-slate-300 uppercase mb-1.5">House / Flat / Road / Street Address *</label>
-            <textarea id="cust-address" required rows="2" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:border-emerald-500 focus:outline-none" placeholder="e.g., Flat 4B, House 12, Road 5, Block C"></textarea>
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-xs font-bold text-slate-300 uppercase mb-1.5">Area / Neighborhood *</label>
-              <input type="text" id="cust-area" required placeholder="e.g., Kazipara, Mirpur, Uttara, Dhanmondi" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:border-emerald-500 focus:outline-none" />
+            <!-- Modal Footer Buttons -->
+            <div class="pt-3 border-t border-slate-800 flex items-center justify-between gap-3">
+              <button type="button" onclick="closeRegistrationModal()" class="text-xs text-slate-400 hover:text-white px-3 py-2">
+                Cancel
+              </button>
+              <button type="submit" id="save-profile-btn" class="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-slate-950 font-black text-xs sm:text-sm px-5 py-2.5 rounded-xl shadow-lg shadow-emerald-500/20 active:scale-95 transition flex items-center gap-1.5">
+                <span>Save & Continue</span>
+                <span>→</span>
+              </button>
             </div>
-            <div>
-              <label class="block text-xs font-bold text-slate-300 uppercase mb-1.5">City / District *</label>
-              <select id="cust-city" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:border-emerald-500 focus:outline-none">
-                <option value="Dhaka">Dhaka</option>
-                <option value="Sirajganj">Sirajganj</option>
-                <option value="Gazipur">Gazipur</option>
-                <option value="Narayanganj">Narayanganj</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Modal Footer Buttons -->
-          <div class="pt-4 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <button type="button" onclick="closeRegistrationModal()" class="w-full sm:w-auto text-xs text-slate-400 hover:text-white px-4 py-2">
-              Cancel
-            </button>
-            <button type="submit" id="save-profile-btn" class="w-full sm:w-auto bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-slate-950 font-black text-sm px-7 py-3 rounded-xl shadow-xl shadow-emerald-500/20 active:scale-95 transition flex items-center justify-center gap-2">
-              <span>Save Address & Continue to Order</span>
-              <span>→</span>
-            </button>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
     </div>
 
@@ -764,14 +745,17 @@
           timestamp: new Date().toISOString()
         };
 
-        btnText.textContent = "Location Detected!";
+        btnText.textContent = "Detected!";
         btnIcon.textContent = "✓";
-        resultBox.classList.remove("hidden");
-        coordsText.textContent = `Lat: ${lat.toFixed(6)}°, Lng: ${lng.toFixed(6)}°`;
-        accuracyBadge.textContent = `±${accuracy}m precision`;
+        if (resultBox) resultBox.classList.remove("hidden");
+        if (coordsText) coordsText.textContent = `Lat: ${lat.toFixed(6)}°, Lng: ${lng.toFixed(6)}°`;
+        if (accuracyBadge) accuracyBadge.textContent = `±${accuracy}m precision`;
+        if (mapsLink) mapsLink.href = mapsUrl;
 
-        // Generate Google Maps pin link
-        mapsLink.href = mapsUrl;
+        const inlineStatus = document.getElementById("gps-status-inline");
+        if (inlineStatus) {
+          inlineStatus.innerHTML = `<span class="text-emerald-400 font-bold">✓ Locked (±${accuracy}m)</span> • <a href="${mapsUrl}" target="_blank" class="underline text-sky-400 hover:text-sky-300">View Map ↗</a>`;
+        }
 
         // Attempt OpenStreetMap reverse geocoding to auto-fill street address
         fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`)
