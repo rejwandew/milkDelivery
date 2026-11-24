@@ -361,57 +361,50 @@
       </div>
     </div>
 
-          <!-- Morning Delivery Time Slot -->
-          <div class="mb-6">
-            <label class="block text-xs font-bold text-slate-300 uppercase mb-3">Preferred Morning Delivery Window</label>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <label class="cursor-pointer">
-                <input type="radio" name="slot" value="5:30 AM - 6:30 AM" checked class="peer sr-only" />
-                <div class="peer-checked:border-emerald-500 peer-checked:bg-emerald-950/30 border border-slate-700 bg-slate-900 rounded-xl p-3 text-center transition">
-                  <div class="text-xs font-extrabold text-emerald-400">🌅 5:30 - 6:30 AM</div>
-                  <div class="text-[11px] text-slate-400 mt-0.5">Sunrise Early</div>
-                </div>
-              </label>
-
-              <label class="cursor-pointer">
-                <input type="radio" name="slot" value="6:30 AM - 7:30 AM" class="peer sr-only" />
-                <div class="peer-checked:border-emerald-500 peer-checked:bg-emerald-950/30 border border-slate-700 bg-slate-900 rounded-xl p-3 text-center transition">
-                  <div class="text-xs font-extrabold text-emerald-400">☕ 6:30 - 7:30 AM</div>
-                  <div class="text-[11px] text-slate-400 mt-0.5">Breakfast Ready</div>
-                </div>
-              </label>
-
-              <label class="cursor-pointer">
-                <input type="radio" name="slot" value="7:30 AM - 8:30 AM" class="peer sr-only" />
-                <div class="peer-checked:border-emerald-500 peer-checked:bg-emerald-950/30 border border-slate-700 bg-slate-900 rounded-xl p-3 text-center transition">
-                  <div class="text-xs font-extrabold text-emerald-400">☀️ 7:30 - 8:30 AM</div>
-                  <div class="text-[11px] text-slate-400 mt-0.5">Morning Standard</div>
-                </div>
-              </label>
+    <!-- ============================================== -->
+    <!-- CANCEL ORDER CONFIRMATION MODAL                -->
+    <!-- ============================================== -->
+    <div id="cancel-modal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md hidden overflow-y-auto">
+      <div class="min-h-screen flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-rose-500/40 rounded-2xl sm:rounded-3xl max-w-md w-full p-6 shadow-2xl relative space-y-5">
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center text-xl shrink-0">
+                ⚠️
+              </div>
+              <div>
+                <h3 class="text-lg font-black text-white">Cancel Morning Order?</h3>
+                <p class="text-xs text-slate-400">Order ID: <span id="cancel-modal-order-id" class="font-mono text-amber-300 font-bold"></span></p>
+              </div>
             </div>
+            <button type="button" onclick="closeCancelModal()" class="text-slate-400 hover:text-white text-xl font-bold p-1 leading-none">✕</button>
           </div>
 
-          <!-- Special Instructions -->
+          <div id="cancel-modal-summary" class="bg-slate-950/70 border border-slate-800 rounded-xl p-3 text-xs text-slate-300"></div>
+
           <div>
-            <label class="block text-xs font-bold text-slate-300 uppercase mb-2">Delivery Rider Instructions (Optional)</label>
-            <input type="text" id="cust-notes" placeholder="e.g. Please ring bell once and leave insulated bag outside door" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-emerald-500 focus:outline-none" />
+            <label class="block text-[11px] font-bold text-slate-300 uppercase mb-1.5">Reason for Cancellation (Optional)</label>
+            <select id="cancel-reason" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white text-xs focus:border-rose-500 focus:outline-none">
+              <option value="Ordered by mistake">Ordered by mistake</option>
+              <option value="Want to change items or quantity">Want to change items or quantity</option>
+              <option value="Schedule changed / Not at home">Schedule changed / Not at home</option>
+              <option value="Other">Other</option>
+            </select>
           </div>
 
-          <!-- Price Calculation Box -->
-          <div class="mt-6 pt-6 border-t border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div>
-              <div class="text-xs text-slate-400">Estimated Total (Cash on Delivery / bKash)</div>
-              <div class="text-2xl md:text-3xl font-black text-emerald-400" id="total-price-text">৳120</div>
-            </div>
+          <!-- Error Box (Visible only if database blocks cancellation) -->
+          <div id="cancel-error-box" class="hidden bg-rose-950/70 border border-rose-500/60 text-rose-200 text-xs rounded-xl p-3 leading-relaxed"></div>
 
-            <button type="submit" id="submit-order-btn" class="w-full sm:w-auto bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-slate-950 font-black text-base px-8 py-4 rounded-2xl shadow-xl shadow-emerald-500/20 active:scale-95 transition cursor-pointer flex items-center justify-center gap-2">
-              <span>Confirm Order & Save to Database</span>
-              <span>→</span>
+          <div class="flex items-center justify-end gap-3 pt-2 border-t border-slate-800">
+            <button type="button" onclick="closeCancelModal()" class="text-xs font-bold text-slate-300 hover:text-white px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 transition">
+              Keep Order
+            </button>
+            <button type="button" id="confirm-cancel-btn" onclick="confirmCancelOrder()" class="bg-rose-600 hover:bg-rose-500 text-white font-black text-xs px-5 py-2.5 rounded-xl shadow-lg shadow-rose-600/20 active:scale-95 transition flex items-center gap-1.5">
+              <span>Yes, Cancel Order</span>
             </button>
           </div>
         </div>
-
-      </form>
+      </div>
     </div>
 
     <!-- ============================================== -->
@@ -940,10 +933,18 @@
 
           if (db) {
             try {
-              await db.collection("orders").doc(orderId).update(updatePayload);
-              savedToCloud = true;
+              const docRef = db.collection("orders").doc(orderId);
+              const docSnap = await docRef.get();
+              if (docSnap.exists) {
+                await docRef.update(updatePayload);
+                savedToCloud = true;
+              }
             } catch (e) {
               console.warn("Update in Firestore failed (check rules):", e);
+              if (e.code === "permission-denied") {
+                alert("Database blocked modification (Permission Denied). Please update your Firestore Rules to allow 'read, update' for the order owner.");
+                return;
+              }
             }
           }
 
@@ -1132,7 +1133,7 @@
             </div>
 
             <div class="flex items-center justify-end gap-3 pt-2">
-              <button type="button" onclick="cancelOrder('${order.id}')" class="flex items-center gap-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 hover:text-rose-200 border border-rose-500/30 text-xs font-bold px-4 py-2.5 rounded-xl transition active:scale-95">
+              <button type="button" onclick="openCancelModal('${order.id}', ${safeOrderJson})" class="flex items-center gap-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 hover:text-rose-200 border border-rose-500/30 text-xs font-bold px-4 py-2.5 rounded-xl transition active:scale-95">
                 <span>✕</span> <span>Cancel Order</span>
               </button>
               <button type="button" onclick="startModifyOrder('${order.id}', ${safeOrderJson})" class="flex items-center gap-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 hover:text-white border border-emerald-500/40 text-xs font-bold px-5 py-2.5 rounded-xl transition active:scale-95 shadow-md">
@@ -1144,30 +1145,121 @@
       }).join("");
     }
 
-    async function cancelOrder(orderId) {
-      if (!confirm(`Are you sure you want to cancel order ${orderId}?`)) return;
+    let orderToCancelId = null;
 
+    function openCancelModal(orderId, orderData) {
+      orderToCancelId = orderId;
+      document.getElementById("cancel-modal-order-id").textContent = orderId;
+      document.getElementById("cancel-error-box").classList.add("hidden");
+      document.getElementById("cancel-error-box").textContent = "";
+
+      const summaryParts = [];
+      if (orderData.items?.milkLiters > 0) summaryParts.push(`${orderData.items.milkLiters}L Milk`);
+      if (orderData.items?.gheeJars > 0) summaryParts.push(`${orderData.items.gheeJars}x Ghee`);
+      if (orderData.items?.doiPots > 0) summaryParts.push(`${orderData.items.doiPots}x Doi`);
+      document.getElementById("cancel-modal-summary").innerHTML = `
+        <div class="font-bold text-white mb-0.5">${summaryParts.join(", ") || "Dairy Order"} • ৳${(orderData.totalAmount || 0).toLocaleString()}</div>
+        <div class="text-slate-400">Slot: ${orderData.deliverySlot || "Morning"}</div>
+      `;
+
+      document.getElementById("cancel-modal").classList.remove("hidden");
+      document.body.style.overflow = "hidden";
+    }
+
+    function closeCancelModal() {
+      orderToCancelId = null;
+      document.getElementById("cancel-modal").classList.add("hidden");
+      document.body.style.overflow = "";
+    }
+
+    async function confirmCancelOrder() {
+      if (!orderToCancelId) return;
+      const orderId = orderToCancelId;
+      const reason = document.getElementById("cancel-reason").value;
+      const btn = document.getElementById("confirm-cancel-btn");
+      const errBox = document.getElementById("cancel-error-box");
+
+      btn.disabled = true;
+      btn.innerHTML = `<span>Cancelling...</span>`;
+      errBox.classList.add("hidden");
+
+      let firestoreCancelled = false;
+      let localCancelled = false;
+      let permissionDenied = false;
+      let otherError = null;
+
+      // 1. Update in Firestore (if order exists in Firestore)
       if (db && orderId) {
         try {
-          await db.collection("orders").doc(orderId).update({
-            status: "cancelled",
-            cancelledAt: new Date().toISOString()
-          });
+          const docRef = db.collection("orders").doc(orderId);
+          const docSnap = await docRef.get();
+          if (docSnap.exists) {
+            await docRef.update({
+              status: "cancelled",
+              cancelReason: reason,
+              cancelledAt: new Date().toISOString()
+            });
+            firestoreCancelled = true;
+          }
         } catch (err) {
-          console.warn("Could not cancel in Firestore (check rules):", err);
+          console.error("Firestore cancel error:", err);
+          if (err.code === "permission-denied") {
+            permissionDenied = true;
+          } else {
+            otherError = err.message;
+          }
         }
       }
 
+      // 2. Update in Realtime Database if present
+      if (!firestoreCancelled && rtdb && orderId) {
+        try {
+          await rtdb.ref("orders/" + orderId).update({
+            status: "cancelled",
+            cancelReason: reason,
+            cancelledAt: new Date().toISOString()
+          });
+          firestoreCancelled = true;
+        } catch (e) {
+          console.warn("RTDB cancel check:", e);
+        }
+      }
+
+      // 3. Update in localStorage
       const localOrders = JSON.parse(localStorage.getItem("puredrop_orders") || "[]");
       localOrders.forEach(o => {
         if (o.id === orderId) {
           o.status = "cancelled";
+          o.cancelReason = reason;
           o.cancelledAt = new Date().toISOString();
+          localCancelled = true;
         }
       });
-      localStorage.setItem("puredrop_orders", JSON.stringify(localOrders));
+      if (localCancelled) {
+        localStorage.setItem("puredrop_orders", JSON.stringify(localOrders));
+      }
 
-      alert(`Order ${orderId} has been cancelled.`);
+      btn.disabled = false;
+      btn.innerHTML = `<span>Yes, Cancel Order</span>`;
+
+      if (permissionDenied) {
+        errBox.innerHTML = `
+          <strong>Database Blocked Cancellation (Permission Denied):</strong><br/>
+          Your Firebase Firestore Rules currently forbid updating orders. Please open <strong>Firebase Console &gt; Firestore &gt; Rules</strong> and change <code>allow update, delete: if false;</code> to:<br/>
+          <code class="block mt-1 bg-slate-900 p-1.5 rounded text-emerald-300">allow read, update: if request.auth != null &amp;&amp; (request.auth.uid == resource.data.userId);</code>
+        `;
+        errBox.classList.remove("hidden");
+        return;
+      }
+
+      if (otherError && !firestoreCancelled && !localCancelled) {
+        errBox.textContent = "Could not cancel order: " + otherError;
+        errBox.classList.remove("hidden");
+        return;
+      }
+
+      // Confirmed cancelled — close modal and reload page cleanly
+      closeCancelModal();
       window.location.reload();
     }
 
