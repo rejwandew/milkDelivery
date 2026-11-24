@@ -32,17 +32,17 @@
 <body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col">
 
   <!-- Header -->
-  <header class="sticky top-0 z-40 bg-slate-900/90 backdrop-blur border-b border-slate-800 px-6 md:px-16 py-4 flex items-center justify-between">
-    <div class="flex items-center gap-4">
-      <a href="index.html" class="flex items-center gap-2 text-slate-400 hover:text-white transition text-sm font-semibold">
-        <span>←</span> <span>Back to Home</span>
+  <header class="sticky top-0 z-40 bg-slate-900/90 backdrop-blur border-b border-slate-800 px-3 sm:px-6 md:px-16 py-3 sm:py-4 flex items-center justify-between gap-2">
+    <div class="flex items-center gap-2 sm:gap-4 shrink-0">
+      <a href="index.html" class="flex items-center gap-1.5 text-slate-400 hover:text-white transition text-xs sm:text-sm font-semibold">
+        <span>←</span> <span class="hidden xs:inline">Back</span>
       </a>
       <span class="text-slate-700">|</span>
-      <a href="index.html" class="text-xl md:text-2xl font-black text-yellow-400 tracking-tight">🥛 দুধ লাগবে?</a>
+      <a href="index.html" class="text-base sm:text-xl md:text-2xl font-black text-yellow-400 tracking-tight whitespace-nowrap">🥛 দুধ লাগবে?</a>
     </div>
 
     <!-- User Account Status in Navbar -->
-    <div id="nav-user-area" class="flex items-center gap-3">
+    <div id="nav-user-area" class="flex items-center gap-2 shrink-0">
       <!-- Dynamic via JS -->
     </div>
   </header>
@@ -124,6 +124,37 @@
             <span>✏️</span> <span>Edit Details / Location</span>
           </button>
         </div>
+      </div>
+
+      <!-- Pending Orders Section (Shows Active/Pending Orders with Cancel & Modify) -->
+      <section id="pending-orders-section" class="hidden space-y-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="text-xl">📦</span>
+            <h3 class="text-base sm:text-lg font-black text-white">Your Pending Morning Orders</h3>
+          </div>
+          <span id="pending-count-badge" class="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[11px] font-bold px-2.5 py-0.5 rounded-full">
+            1 Active Order
+          </span>
+        </div>
+        <div id="pending-orders-list" class="space-y-4">
+          <!-- Dynamically populated via renderPendingOrders() -->
+        </div>
+      </section>
+
+      <!-- Modify Order Banner (Appears when customer clicks Modify Order) -->
+      <div id="modify-mode-banner" class="hidden bg-gradient-to-r from-amber-500/20 via-slate-800 to-slate-800 border border-amber-500/50 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xl">
+        <div class="flex items-center gap-3">
+          <span class="text-2xl">✏️</span>
+          <div>
+            <div class="text-[10px] font-bold uppercase tracking-wider text-amber-400">Modifying Existing Order</div>
+            <div class="text-sm font-black text-white">Order: <span id="modify-order-id-label" class="font-mono text-amber-300">#ORD-XXXXXX</span></div>
+            <p class="text-[11px] text-slate-300">Adjust products or delivery slot below, then click "Save Changes".</p>
+          </div>
+        </div>
+        <button type="button" onclick="cancelModifyMode()" class="text-xs bg-slate-900 hover:bg-slate-700 text-slate-300 hover:text-white font-bold px-3.5 py-2 rounded-xl transition border border-slate-700 shrink-0">
+          Cancel Edit
+        </button>
       </div>
 
       <!-- Order Selection Form -->
@@ -624,10 +655,10 @@
       // Update Header Navbar
       const navUserArea = document.getElementById("nav-user-area");
       navUserArea.innerHTML = `
-        <div class="flex items-center gap-2">
-          <img src="${user.photoURL}" class="w-8 h-8 rounded-full border border-emerald-400" />
-          <span class="text-xs font-semibold text-slate-200 hidden sm:inline">${user.displayName}</span>
-          <button onclick="signOutUser()" class="text-xs text-slate-400 hover:text-rose-400 px-2 py-1 rounded bg-slate-800 ml-1">Log out</button>
+        <div class="flex items-center gap-1.5 sm:gap-2">
+          <img src="${user.photoURL}" class="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-emerald-400 shrink-0" />
+          <span class="text-xs font-semibold text-slate-200 hidden md:inline max-w-[120px] truncate">${user.displayName}</span>
+          <button onclick="signOutUser()" class="text-xs text-slate-300 hover:text-rose-400 px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700 whitespace-nowrap shrink-0">Log out</button>
         </div>
       `;
 
@@ -641,6 +672,9 @@
       document.getElementById("auth-section").classList.add("hidden");
       document.getElementById("order-flow-section").classList.remove("hidden");
       document.getElementById("success-section").classList.add("hidden");
+
+      // Load any existing pending orders for this user
+      loadPendingOrders();
 
       // Auto-load previous delivery details if returning customer in Firestore
       if (db && user && user.uid) {
@@ -892,6 +926,46 @@
       let savedToCloud = false;
 
       try {
+        // If modifying an existing order
+        if (currentlyModifyingOrderId) {
+          orderId = currentlyModifyingOrderId;
+          const updatePayload = {
+            items: orderData.items,
+            totalAmount: orderData.totalAmount,
+            deliverySlot: orderData.deliverySlot,
+            notes: orderData.notes,
+            status: "confirmed",
+            updatedAt: new Date().toISOString()
+          };
+
+          if (db) {
+            try {
+              await db.collection("orders").doc(orderId).update(updatePayload);
+              savedToCloud = true;
+            } catch (e) {
+              console.warn("Update in Firestore failed (check rules):", e);
+            }
+          }
+
+          // Also update in localStorage
+          const existingOrders = JSON.parse(localStorage.getItem("puredrop_orders") || "[]");
+          existingOrders.forEach(o => {
+            if (o.id === orderId) {
+              o.items = updatePayload.items;
+              o.totalAmount = updatePayload.totalAmount;
+              o.deliverySlot = updatePayload.deliverySlot;
+              o.notes = updatePayload.notes;
+              o.updatedAt = updatePayload.updatedAt;
+            }
+          });
+          localStorage.setItem("puredrop_orders", JSON.stringify(existingOrders));
+
+          cancelModifyMode();
+          loadPendingOrders();
+          showSuccessScreen(orderId, { ...orderData, ...updatePayload });
+          return;
+        }
+
         // 1. Try saving to Firestore
         if (db) {
           try {
@@ -947,7 +1021,8 @@
           localStorage.setItem("puredrop_orders", JSON.stringify(existingOrders));
         }
 
-        // Display Success Screen
+        // Refresh pending orders list and Display Success Screen
+        loadPendingOrders();
         showSuccessScreen(orderId, orderData);
 
       } catch (err) {
@@ -957,6 +1032,191 @@
         submitBtn.disabled = false;
         submitBtn.innerHTML = `<span>Confirm Order & Save to Database</span> <span>→</span>`;
       }
+    }
+
+    // ==============================================
+    // PENDING ORDERS, CANCEL & MODIFY LOGIC
+    // ==============================================
+    let currentlyModifyingOrderId = null;
+
+    async function loadPendingOrders() {
+      if (!currentUser) return;
+      const section = document.getElementById("pending-orders-section");
+      if (!section) return;
+
+      let orders = [];
+
+      // 1. Fetch from Firestore
+      if (db && currentUser.uid) {
+        try {
+          const snapshot = await db.collection("orders")
+            .where("userId", "==", currentUser.uid)
+            .get();
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            if (data.status === "confirmed" || data.status === "pending") {
+              orders.push({ id: doc.id, ...data });
+            }
+          });
+        } catch (err) {
+          console.warn("Firestore pending orders query:", err);
+        }
+      }
+
+      // 2. Also check localStorage
+      const localOrders = JSON.parse(localStorage.getItem("puredrop_orders") || "[]");
+      localOrders.forEach(o => {
+        if ((o.userId === currentUser.uid || o.userId === "anonymous") && (o.status === "confirmed" || o.status === "pending")) {
+          if (!orders.some(existing => existing.id === o.id)) {
+            orders.push(o);
+          }
+        }
+      });
+
+      // Sort newest first
+      orders.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+      renderPendingOrders(orders);
+    }
+
+    function renderPendingOrders(orders) {
+      const section = document.getElementById("pending-orders-section");
+      const list = document.getElementById("pending-orders-list");
+      const badge = document.getElementById("pending-count-badge");
+
+      if (!orders || orders.length === 0) {
+        section.classList.add("hidden");
+        return;
+      }
+
+      section.classList.remove("hidden");
+      badge.textContent = `${orders.length} Active Order${orders.length > 1 ? 's' : ''}`;
+
+      list.innerHTML = orders.map(order => {
+        const itemsList = [];
+        if (order.items?.milkLiters > 0) itemsList.push(`🥛 ${order.items.milkLiters}L Farm Fresh Milk`);
+        if (order.items?.gheeJars > 0) itemsList.push(`🍯 ${order.items.gheeJars}x Desi Ghee`);
+        if (order.items?.doiPots > 0) itemsList.push(`🥣 ${order.items.doiPots}x Clay-Pot Doi`);
+        const itemsSummary = itemsList.length > 0 ? itemsList.map(i => `<div>${i}</div>`).join("") : "<div>Dairy Order</div>";
+        const safeOrderJson = JSON.stringify(order).replace(/'/g, "&apos;").replace(/"/g, "&quot;");
+
+        return `
+          <div class="bg-slate-800/90 border border-amber-500/40 rounded-3xl p-5 sm:p-7 shadow-xl space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-700/80 pb-3">
+              <div class="flex items-center gap-2.5 flex-wrap">
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
+                <span class="font-mono font-bold text-amber-300 text-sm md:text-base">${order.id}</span>
+                <span class="bg-amber-500/20 text-amber-300 text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full">Pending Dawn Delivery</span>
+              </div>
+              <div class="text-xs text-slate-400">
+                ${order.createdAt ? new Date(order.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Scheduled'}
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+              <div class="bg-slate-900/70 p-3 rounded-xl border border-slate-800 space-y-1">
+                <span class="text-slate-400 font-bold uppercase text-[10px] block">Items in Order</span>
+                <div class="font-semibold text-white space-y-0.5">${itemsSummary}</div>
+              </div>
+              <div class="bg-slate-900/70 p-3 rounded-xl border border-slate-800 space-y-1">
+                <span class="text-slate-400 font-bold uppercase text-[10px] block">Morning Slot</span>
+                <div class="font-semibold text-emerald-400">${order.deliverySlot || "5:30 AM - 6:30 AM"}</div>
+                <div class="text-[11px] text-slate-400 truncate">${order.address || ""}, ${order.area || ""}</div>
+              </div>
+              <div class="bg-slate-900/70 p-3 rounded-xl border border-slate-800 space-y-1 sm:col-span-2 md:col-span-1 flex flex-col justify-between">
+                <div>
+                  <span class="text-slate-400 font-bold uppercase text-[10px] block">Total Payable</span>
+                  <div class="text-lg font-black text-emerald-400">৳${(order.totalAmount || 0).toLocaleString()}</div>
+                </div>
+                <span class="text-[10px] text-slate-500">Cash on Delivery / bKash</span>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-3 pt-2">
+              <button type="button" onclick="cancelOrder('${order.id}')" class="flex items-center gap-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 hover:text-rose-200 border border-rose-500/30 text-xs font-bold px-4 py-2.5 rounded-xl transition active:scale-95">
+                <span>✕</span> <span>Cancel Order</span>
+              </button>
+              <button type="button" onclick="startModifyOrder('${order.id}', ${safeOrderJson})" class="flex items-center gap-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 hover:text-white border border-emerald-500/40 text-xs font-bold px-5 py-2.5 rounded-xl transition active:scale-95 shadow-md">
+                <span>✏️</span> <span>Modify Order</span>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    async function cancelOrder(orderId) {
+      if (!confirm(`Are you sure you want to cancel order ${orderId}?`)) return;
+
+      if (db && orderId) {
+        try {
+          await db.collection("orders").doc(orderId).update({
+            status: "cancelled",
+            cancelledAt: new Date().toISOString()
+          });
+        } catch (err) {
+          console.warn("Could not cancel in Firestore (check rules):", err);
+        }
+      }
+
+      const localOrders = JSON.parse(localStorage.getItem("puredrop_orders") || "[]");
+      localOrders.forEach(o => {
+        if (o.id === orderId) {
+          o.status = "cancelled";
+          o.cancelledAt = new Date().toISOString();
+        }
+      });
+      localStorage.setItem("puredrop_orders", JSON.stringify(localOrders));
+
+      alert(`Order ${orderId} has been cancelled.`);
+      loadPendingOrders();
+    }
+
+    function startModifyOrder(orderId, orderData) {
+      currentlyModifyingOrderId = orderId;
+
+      productQuantities.milk = orderData.items?.milkLiters || 0;
+      productQuantities.ghee = orderData.items?.gheeJars || 0;
+      productQuantities.doi = orderData.items?.doiPots || 0;
+      document.getElementById("qty-milk").textContent = productQuantities.milk;
+      document.getElementById("qty-ghee").textContent = productQuantities.ghee;
+      document.getElementById("qty-doi").textContent = productQuantities.doi;
+      recalcTotal();
+
+      const slotRadios = document.querySelectorAll('input[name="slot"]');
+      slotRadios.forEach(radio => {
+        if (radio.value === orderData.deliverySlot) radio.checked = true;
+      });
+
+      document.getElementById("cust-notes").value = orderData.notes || "";
+
+      const modifyBanner = document.getElementById("modify-mode-banner");
+      if (modifyBanner) {
+        modifyBanner.classList.remove("hidden");
+        document.getElementById("modify-order-id-label").textContent = orderId;
+      }
+
+      const submitBtn = document.getElementById("submit-order-btn");
+      submitBtn.querySelector("span:first-child").textContent = "Save Changes to Order";
+
+      document.getElementById("order-form").scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function cancelModifyMode() {
+      currentlyModifyingOrderId = null;
+      const modifyBanner = document.getElementById("modify-mode-banner");
+      if (modifyBanner) modifyBanner.classList.add("hidden");
+
+      const submitBtn = document.getElementById("submit-order-btn");
+      submitBtn.querySelector("span:first-child").textContent = "Confirm Order & Save to Database";
+
+      productQuantities.milk = 1;
+      productQuantities.ghee = 0;
+      productQuantities.doi = 0;
+      document.getElementById("qty-milk").textContent = 1;
+      document.getElementById("qty-ghee").textContent = 0;
+      document.getElementById("qty-doi").textContent = 0;
+      document.getElementById("cust-notes").value = "";
+      recalcTotal();
     }
 
     function showSuccessScreen(orderId, data) {
