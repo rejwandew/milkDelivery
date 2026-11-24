@@ -10,7 +10,6 @@
   <!-- Firebase SDK (Compat Version for seamless script loading without build tools) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
   
   <!-- Firebase Project Configuration -->
@@ -479,7 +478,6 @@
     };
 
     let firebaseInitialized = false;
-    let db = null;
     let rtdb = null;
     let auth = null;
 
@@ -489,12 +487,23 @@
       : {
           apiKey: "AIzaSyAX9XrBuxDe--SdegCg46FeZIAauZwYfvk",
           authDomain: "puredrop-dairy-6b4a9.firebaseapp.com",
+          databaseURL: "https://puredrop-dairy-6b4a9-default-rtdb.firebaseio.com",
           projectId: "puredrop-dairy-6b4a9",
           storageBucket: "puredrop-dairy-6b4a9.firebasestorage.app",
           messagingSenderId: "825921705426",
           appId: "1:825921705426:web:25df4cbd3836c935a0a40b",
           measurementId: "G-SYRSEKKCMV"
         };
+
+    // Timeout helper so Realtime Database calls never hang indefinitely
+    function withTimeout(promise, ms = 10000) {
+      return Promise.race([
+        promise,
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Realtime Database timed out. Verify your Realtime Database is created and databaseURL matches Firebase Console.")), ms)
+        )
+      ]);
+    }
 
     // Initialize Firebase
     function initFirebase() {
@@ -503,7 +512,6 @@
           firebase.initializeApp(FIREBASE_APP_CONFIG);
         }
         auth = firebase.auth();
-        try { db = firebase.firestore(); } catch (e) { console.warn("Firestore init:", e); }
         try { rtdb = firebase.database(); } catch (e) { console.warn("Realtime DB init:", e); }
         firebaseInitialized = true;
 
@@ -595,10 +603,10 @@
       saveBtn.disabled = true;
       saveBtn.innerHTML = `<span>Saving Profile...</span>`;
 
-      // Save customer profile to Firestore
+      // Save customer profile to Firebase Realtime Database
       try {
-        if (db && currentUser && currentUser.uid) {
-          await db.collection("customers").doc(currentUser.uid).set({
+        if (rtdb && currentUser && currentUser.uid) {
+          await withTimeout(rtdb.ref("customers/" + currentUser.uid).update({
             name: name,
             email: email,
             phone: phone,
@@ -607,10 +615,10 @@
             lastCity: city,
             lastLocation: detectedLocation || null,
             updatedAt: new Date().toISOString()
-          }, { merge: true });
+          }));
         }
       } catch (err) {
-        console.warn("Could not save customer profile to Firestore:", err);
+        console.warn("Could not save customer profile to Realtime Database:", err);
       } finally {
         saveBtn.disabled = false;
         saveBtn.innerHTML = `<span>Save Profile & Continue to Order</span> <span>→</span>`;
@@ -669,11 +677,11 @@
       // Load any existing pending orders for this user
       loadPendingOrders();
 
-      // Auto-load previous delivery details if returning customer in Firestore
-      if (db && user && user.uid) {
-        db.collection("customers").doc(user.uid).get().then((doc) => {
-          if (doc.exists && doc.data().phone && doc.data().lastAddress) {
-            const data = doc.data();
+      // Auto-load previous delivery details if returning customer in Realtime Database
+      if (rtdb && user && user.uid) {
+        withTimeout(rtdb.ref("customers/" + user.uid).once("value")).then((snapshot) => {
+          const data = snapshot.val();
+          if (data && data.phone && data.lastAddress) {
             const rawPhone = data.phone.replace("+880", "").trim();
             document.getElementById("cust-phone").value = rawPhone;
             document.getElementById("cust-address").value = data.lastAddress;
@@ -931,18 +939,15 @@
             updatedAt: new Date().toISOString()
           };
 
-          if (db) {
+          if (rtdb && currentUser && currentUser.uid) {
             try {
-              const docRef = db.collection("orders").doc(orderId);
-              const docSnap = await docRef.get();
-              if (docSnap.exists) {
-                await docRef.update(updatePayload);
-                savedToCloud = true;
-              }
+              await withTimeout(rtdb.ref(`orders/${currentUser.uid}/${orderId}`).update(updatePayload));
+              savedToCloud = true;
             } catch (e) {
-              console.warn("Update in Firestore failed (check rules):", e);
-              if (e.code === "permission-denied") {
-                alert("Database blocked modification (Permission Denied). Please update your Firestore Rules to allow 'read, update' for the order owner.");
+              console.warn("Update in Realtime Database failed:", e);
+              const msg = (e.message || "").toLowerCase();
+              if (e.code === "PERMISSION_DENIED" || msg.includes("permission")) {
+                alert("Database blocked modification (Permission Denied). Please check your Realtime Database Rules.");
                 return;
               }
             }
@@ -967,54 +972,30 @@
           return;
         }
 
-        // 1. Try saving to Firestore
-        if (db) {
+        // 1. Save to Firebase Realtime Database under orders/{uid}/{orderId}
+        if (rtdb && currentUser && currentUser.uid) {
           try {
-            const docRef = await db.collection("orders").add(orderData);
-            orderId = docRef.id;
-            if (currentUser && currentUser.uid) {
-              await db.collection("customers").doc(currentUser.uid).set({
-                name: orderData.customerName,
-                email: orderData.email,
-                phone: orderData.phone,
-                lastAddress: orderData.address,
-                lastArea: orderData.area,
-                lastCity: orderData.city,
-                lastLocation: orderData.location,
-                updatedAt: new Date().toISOString()
-              }, { merge: true });
-            }
-            savedToCloud = true;
-          } catch (fsErr) {
-            console.warn("Firestore save failed or not enabled yet:", fsErr);
-          }
-        }
-
-        // 2. If Firestore wasn't configured, try Realtime Database
-        if (!savedToCloud && rtdb) {
-          try {
-            const newOrderRef = rtdb.ref("orders").push();
-            await newOrderRef.set(orderData);
+            const newOrderRef = rtdb.ref("orders/" + currentUser.uid).push();
+            await withTimeout(newOrderRef.set(orderData));
             orderId = newOrderRef.key;
-            if (currentUser && currentUser.uid) {
-              await rtdb.ref("customers/" + currentUser.uid).update({
-                name: orderData.customerName,
-                email: orderData.email,
-                phone: orderData.phone,
-                lastAddress: orderData.address,
-                lastArea: orderData.area,
-                lastCity: orderData.city,
-                lastLocation: orderData.location,
-                updatedAt: new Date().toISOString()
-              });
-            }
+
+            await withTimeout(rtdb.ref("customers/" + currentUser.uid).update({
+              name: orderData.customerName,
+              email: orderData.email,
+              phone: orderData.phone,
+              lastAddress: orderData.address,
+              lastArea: orderData.area,
+              lastCity: orderData.city,
+              lastLocation: orderData.location,
+              updatedAt: new Date().toISOString()
+            }));
             savedToCloud = true;
           } catch (rtErr) {
             console.warn("Realtime Database save failed:", rtErr);
           }
         }
 
-        // 3. Fallback to localStorage if cloud rules or permissions blocked write
+        // 2. Fallback to localStorage if cloud rules or permissions blocked write
         if (!savedToCloud) {
           const existingOrders = JSON.parse(localStorage.getItem("puredrop_orders") || "[]");
           orderData.id = orderId;
@@ -1047,20 +1028,21 @@
 
       let orders = [];
 
-      // 1. Fetch from Firestore
-      if (db && currentUser.uid) {
+      // 1. Fetch from Firebase Realtime Database
+      if (rtdb && currentUser.uid) {
         try {
-          const snapshot = await db.collection("orders")
-            .where("userId", "==", currentUser.uid)
-            .get();
-          snapshot.forEach(doc => {
-            const data = doc.data();
-            if (data.status === "confirmed" || data.status === "pending") {
-              orders.push({ id: doc.id, ...data });
-            }
-          });
+          const snapshot = await withTimeout(rtdb.ref("orders/" + currentUser.uid).once("value"));
+          const val = snapshot.val();
+          if (val) {
+            Object.keys(val).forEach(key => {
+              const data = val[key];
+              if (data && (data.status === "confirmed" || data.status === "pending")) {
+                orders.push({ id: key, ...data });
+              }
+            });
+          }
         } catch (err) {
-          console.warn("Firestore pending orders query:", err);
+          console.warn("Realtime Database pending orders query:", err);
         }
       }
 
@@ -1183,84 +1165,68 @@
       btn.innerHTML = `<span>Cancelling...</span>`;
       errBox.classList.add("hidden");
 
-      let firestoreCancelled = false;
+      let rtdbCancelled = false;
       let localCancelled = false;
       let permissionDenied = false;
       let otherError = null;
 
-      // 1. Update in Firestore (if order exists in Firestore)
-      if (db && orderId) {
-        try {
-          const docRef = db.collection("orders").doc(orderId);
-          const docSnap = await docRef.get();
-          if (docSnap.exists) {
-            await docRef.update({
+      try {
+        // 1. Update in Firebase Realtime Database under orders/{uid}/{orderId}
+        if (rtdb && currentUser && currentUser.uid && orderId && !orderId.startsWith("ORD-")) {
+          try {
+            await withTimeout(rtdb.ref(`orders/${currentUser.uid}/${orderId}`).update({
               status: "cancelled",
               cancelReason: reason,
               cancelledAt: new Date().toISOString()
-            });
-            firestoreCancelled = true;
+            }));
+            rtdbCancelled = true;
+          } catch (err) {
+            console.error("Realtime Database cancel error:", err);
+            const msg = (err.message || "").toLowerCase();
+            if (err.code === "PERMISSION_DENIED" || msg.includes("permission")) {
+              permissionDenied = true;
+            } else {
+              otherError = err.message || "Unknown database error";
+            }
           }
-        } catch (err) {
-          console.error("Firestore cancel error:", err);
-          if (err.code === "permission-denied") {
-            permissionDenied = true;
-          } else {
-            otherError = err.message;
+        }
+
+        // 2. Update in localStorage
+        const localOrders = JSON.parse(localStorage.getItem("puredrop_orders") || "[]");
+        localOrders.forEach(o => {
+          if (o.id === orderId) {
+            o.status = "cancelled";
+            o.cancelReason = reason;
+            o.cancelledAt = new Date().toISOString();
+            localCancelled = true;
           }
+        });
+        if (localCancelled) {
+          localStorage.setItem("puredrop_orders", JSON.stringify(localOrders));
         }
-      }
 
-      // 2. Update in Realtime Database if present
-      if (!firestoreCancelled && rtdb && orderId) {
-        try {
-          await rtdb.ref("orders/" + orderId).update({
-            status: "cancelled",
-            cancelReason: reason,
-            cancelledAt: new Date().toISOString()
-          });
-          firestoreCancelled = true;
-        } catch (e) {
-          console.warn("RTDB cancel check:", e);
+        if (permissionDenied) {
+          errBox.innerHTML = `
+            <strong>Database Blocked Cancellation (Permission Denied):</strong><br/>
+            Please check your <strong>Realtime Database &gt; Rules</strong> in Firebase Console and ensure authenticated users can read/write their own <code>orders/$uid</code>.
+          `;
+          errBox.classList.remove("hidden");
+          return;
         }
-      }
 
-      // 3. Update in localStorage
-      const localOrders = JSON.parse(localStorage.getItem("puredrop_orders") || "[]");
-      localOrders.forEach(o => {
-        if (o.id === orderId) {
-          o.status = "cancelled";
-          o.cancelReason = reason;
-          o.cancelledAt = new Date().toISOString();
-          localCancelled = true;
+        if (otherError && !rtdbCancelled && !localCancelled) {
+          errBox.textContent = "Could not cancel order: " + otherError;
+          errBox.classList.remove("hidden");
+          return;
         }
-      });
-      if (localCancelled) {
-        localStorage.setItem("puredrop_orders", JSON.stringify(localOrders));
+
+        // Confirmed cancelled — close modal and reload page cleanly
+        closeCancelModal();
+        window.location.reload();
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<span>Yes, Cancel Order</span>`;
       }
-
-      btn.disabled = false;
-      btn.innerHTML = `<span>Yes, Cancel Order</span>`;
-
-      if (permissionDenied) {
-        errBox.innerHTML = `
-          <strong>Database Blocked Cancellation (Permission Denied):</strong><br/>
-          Your Firebase Firestore Rules currently forbid updating orders. Please open <strong>Firebase Console &gt; Firestore &gt; Rules</strong> and change <code>allow update, delete: if false;</code> to:<br/>
-          <code class="block mt-1 bg-slate-900 p-1.5 rounded text-emerald-300">allow read, update: if request.auth != null &amp;&amp; (request.auth.uid == resource.data.userId);</code>
-        `;
-        errBox.classList.remove("hidden");
-        return;
-      }
-
-      if (otherError && !firestoreCancelled && !localCancelled) {
-        errBox.textContent = "Could not cancel order: " + otherError;
-        errBox.classList.remove("hidden");
-        return;
-      }
-
-      // Confirmed cancelled — close modal and reload page cleanly
-      closeCancelModal();
-      window.location.reload();
     }
 
     function startModifyOrder(orderId, orderData) {

@@ -2,6 +2,7 @@
 window.FIREBASE_CONFIG = {
   apiKey: "AIzaSyAX9XrBuxDe--SdegCg46FeZIAauZwYfvk",
   authDomain: "puredrop-dairy-6b4a9.firebaseapp.com",
+  databaseURL: "https://puredrop-dairy-6b4a9-default-rtdb.firebaseio.com",
   projectId: "puredrop-dairy-6b4a9",
   storageBucket: "puredrop-dairy-6b4a9.firebasestorage.app",
   messagingSenderId: "825921705426",
