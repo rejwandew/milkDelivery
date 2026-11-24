@@ -1168,7 +1168,7 @@
       localStorage.setItem("puredrop_orders", JSON.stringify(localOrders));
 
       alert(`Order ${orderId} has been cancelled.`);
-      loadPendingOrders();
+      window.location.reload();
     }
 
     function startModifyOrder(orderId, orderData) {
