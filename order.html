@@ -1113,7 +1113,7 @@
       allOrders.forEach(o => { customerOrdersById[o.id] = o; });
 
       const pendingOrders = allOrders.filter(o => o.status === "pending");
-      const confirmedOrders = allOrders.filter(o => o.status === "confirmed" || o.status === "delivered");
+      const confirmedOrders = allOrders.filter(o => o.status === "confirmed");
 
       renderPendingOrders(pendingOrders);
       renderConfirmedOrders(confirmedOrders);
@@ -1206,19 +1206,14 @@
       list.innerHTML = orders.map(order => {
         const itemsSummary = formatOrderItemsHtml(order);
         const safeId = escapeHtml(order.id);
-        const isDelivered = order.status === "delivered";
-        const statusLabel = isDelivered ? "Delivered" : "Confirmed by Admin";
-        const statusBadgeClass = isDelivered
-          ? "bg-sky-500/20 text-sky-300"
-          : "bg-emerald-500/20 text-emerald-300";
 
         return `
-          <div class="bg-slate-800/90 border ${isDelivered ? "border-sky-500/40" : "border-emerald-500/40"} rounded-3xl p-5 sm:p-7 shadow-xl space-y-4">
+          <div class="bg-slate-800/90 border border-emerald-500/40 rounded-3xl p-5 sm:p-7 shadow-xl space-y-4">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-700/80 pb-3">
               <div class="flex items-center gap-2.5 flex-wrap">
-                <span class="w-2.5 h-2.5 rounded-full ${isDelivered ? "bg-sky-400" : "bg-emerald-400"}"></span>
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
                 <span class="font-mono font-bold text-emerald-300 text-sm md:text-base">${safeId}</span>
-                <span class="${statusBadgeClass} text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full">${statusLabel}</span>
+                <span class="bg-emerald-500/20 text-emerald-300 text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full">Confirmed by Admin</span>
               </div>
               <div class="text-xs text-slate-400">
                 ${order.createdAt ? new Date(order.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Scheduled'}
