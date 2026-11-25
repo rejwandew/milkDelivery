@@ -27,9 +27,7 @@
         <span class="text-lg sm:text-xl font-black text-yellow-400">🥛 দুধ লাগবে?</span>
         <span class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full">Admin Panel</span>
       </div>
-      <a href="order.html?mode=customer" class="hidden md:inline-flex items-center gap-1 text-xs text-slate-400 hover:text-emerald-300 bg-slate-800/80 px-2.5 py-1 rounded-lg border border-slate-700 transition">
-        <span>Test Order Page ↗</span>
-      </a>
+
     </div>
 
     <div id="admin-nav-user" class="flex items-center gap-2 shrink-0"></div>
@@ -85,25 +83,30 @@
       </div>
 
       <!-- KPI Summary Bar -->
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5">
           <div class="text-[11px] font-bold uppercase text-slate-400">Total Customers</div>
           <div id="stat-customers" class="text-2xl sm:text-3xl font-black text-white mt-1">0</div>
           <div class="text-[11px] text-slate-500 mt-1">Registered profiles</div>
         </div>
-        <div class="bg-slate-900 border border-emerald-500/30 rounded-2xl p-4 sm:p-5">
+        <div class="bg-slate-900 border border-amber-500/30 rounded-2xl p-4 sm:p-5 cursor-pointer hover:border-amber-400/60 transition" onclick="setCustomerFilter('pending')">
+          <div class="text-[11px] font-bold uppercase text-amber-400">Pending Orders</div>
+          <div id="stat-pending" class="text-2xl sm:text-3xl font-black text-amber-400 mt-1">0</div>
+          <div id="stat-pending-summary" class="text-[11px] text-slate-400 mt-1">0L Milk • 0 Ghee • 0 Doi</div>
+        </div>
+        <div class="bg-slate-900 border border-emerald-500/30 rounded-2xl p-4 sm:p-5 cursor-pointer hover:border-emerald-400/60 transition" onclick="setCustomerFilter('confirmed')">
           <div class="text-[11px] font-bold uppercase text-emerald-400">Confirmed Orders</div>
           <div id="stat-confirmed" class="text-2xl sm:text-3xl font-black text-emerald-400 mt-1">0</div>
           <div id="stat-milk-summary" class="text-[11px] text-slate-400 mt-1">0L Milk • 0 Ghee • 0 Doi</div>
         </div>
-        <div class="bg-slate-900 border border-rose-500/30 rounded-2xl p-4 sm:p-5">
+        <div class="bg-slate-900 border border-rose-500/30 rounded-2xl p-4 sm:p-5 cursor-pointer hover:border-rose-400/60 transition" onclick="setCustomerFilter('cancelled')">
           <div class="text-[11px] font-bold uppercase text-rose-400">Cancelled Orders</div>
           <div id="stat-cancelled" class="text-2xl sm:text-3xl font-black text-rose-400 mt-1">0</div>
           <div class="text-[11px] text-slate-500 mt-1">Cancelled by customer/admin</div>
         </div>
-        <div class="bg-slate-900 border border-amber-500/30 rounded-2xl p-4 sm:p-5">
-          <div class="text-[11px] font-bold uppercase text-amber-400">Active Revenue</div>
-          <div id="stat-revenue" class="text-2xl sm:text-3xl font-black text-amber-300 mt-1">৳0</div>
+        <div class="bg-slate-900 border border-sky-500/30 rounded-2xl p-4 sm:p-5 col-span-2 lg:col-span-1">
+          <div class="text-[11px] font-bold uppercase text-sky-400">Confirmed Revenue</div>
+          <div id="stat-revenue" class="text-2xl sm:text-3xl font-black text-sky-300 mt-1">৳0</div>
           <div class="text-[11px] text-slate-500 mt-1">Confirmed + Delivered</div>
         </div>
       </div>
@@ -127,8 +130,9 @@
 
           <div class="flex items-center gap-2 flex-wrap">
             <button onclick="setCustomerFilter('all')" id="filter-btn-all" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-500 text-slate-950 transition">All Users</button>
-            <button onclick="setCustomerFilter('confirmed')" id="filter-btn-confirmed" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition">With Confirmed Orders</button>
-            <button onclick="setCustomerFilter('cancelled')" id="filter-btn-cancelled" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition">With Cancelled Orders</button>
+            <button onclick="setCustomerFilter('pending')" id="filter-btn-pending" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 text-amber-300 hover:bg-slate-700 transition">Pending Orders</button>
+            <button onclick="setCustomerFilter('confirmed')" id="filter-btn-confirmed" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition">Confirmed Orders</button>
+            <button onclick="setCustomerFilter('cancelled')" id="filter-btn-cancelled" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition">Cancelled Orders</button>
             <button onclick="loadAdminData()" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-sky-500/20 text-sky-300 border border-sky-500/30 hover:bg-sky-500/30 transition">↻ Refresh</button>
           </div>
         </div>
@@ -206,6 +210,7 @@
                 <h3 class="text-base sm:text-lg font-black text-white">Order History</h3>
                 <div class="flex items-center gap-2 flex-wrap">
                   <button onclick="setOrderTab('all')" id="tab-orders-all" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-700 text-white transition">All (<span id="count-all">0</span>)</button>
+                  <button onclick="setOrderTab('pending')" id="tab-orders-pending" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 transition">Pending (<span id="count-pending">0</span>)</button>
                   <button onclick="setOrderTab('confirmed')" id="tab-orders-confirmed" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 transition">Confirmed (<span id="count-confirmed">0</span>)</button>
                   <button onclick="setOrderTab('cancelled')" id="tab-orders-cancelled" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-rose-500/15 text-rose-300 border border-rose-500/30 transition">Cancelled (<span id="count-cancelled">0</span>)</button>
                 </div>
@@ -466,32 +471,41 @@
     }
 
     function updateDashboardStats() {
+      let pendingCount = 0;
       let confirmedCount = 0;
       let cancelledCount = 0;
       let revenue = 0;
-      let totalMilk = 0, totalGhee = 0, totalDoi = 0;
+      let pendingMilk = 0, pendingGhee = 0, pendingDoi = 0;
+      let confirmedMilk = 0, confirmedGhee = 0, confirmedDoi = 0;
 
       allCustomers.forEach(c => {
         c.orders.forEach(o => {
           if (o.status === "cancelled") {
             cancelledCount++;
+          } else if (o.status === "pending") {
+            pendingCount++;
+            pendingMilk += Number(o.items?.milkLiters || 0);
+            pendingGhee += Number(o.items?.gheeJars || 0);
+            pendingDoi += Number(o.items?.doiPots || 0);
           } else {
             confirmedCount++;
             revenue += Number(o.totalAmount || 0);
-            if (o.status === "confirmed" || o.status === "pending") {
-              totalMilk += Number(o.items?.milkLiters || 0);
-              totalGhee += Number(o.items?.gheeJars || 0);
-              totalDoi += Number(o.items?.doiPots || 0);
+            if (o.status === "confirmed") {
+              confirmedMilk += Number(o.items?.milkLiters || 0);
+              confirmedGhee += Number(o.items?.gheeJars || 0);
+              confirmedDoi += Number(o.items?.doiPots || 0);
             }
           }
         });
       });
 
       document.getElementById("stat-customers").textContent = allCustomers.length;
+      document.getElementById("stat-pending").textContent = pendingCount;
+      document.getElementById("stat-pending-summary").textContent = `${pendingMilk}L Milk • ${pendingGhee} Ghee • ${pendingDoi} Doi awaiting`;
       document.getElementById("stat-confirmed").textContent = confirmedCount;
       document.getElementById("stat-cancelled").textContent = cancelledCount;
       document.getElementById("stat-revenue").textContent = "৳" + revenue.toLocaleString();
-      document.getElementById("stat-milk-summary").textContent = `${totalMilk}L Milk • ${totalGhee} Ghee • ${totalDoi} Doi pending`;
+      document.getElementById("stat-milk-summary").textContent = `${confirmedMilk}L Milk • ${confirmedGhee} Ghee • ${confirmedDoi} Doi confirmed`;
     }
 
     function handleSearch() {
@@ -510,9 +524,12 @@
       customerFilter = mode;
       const styles = {
         active: "px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-500 text-slate-950 transition",
-        inactive: "px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition"
+        activePending: "px-3.5 py-2 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 transition",
+        inactive: "px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition",
+        inactivePending: "px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 text-amber-300 hover:bg-slate-700 transition"
       };
       document.getElementById("filter-btn-all").className = mode === "all" ? styles.active : styles.inactive;
+      document.getElementById("filter-btn-pending").className = mode === "pending" ? styles.activePending : styles.inactivePending;
       document.getElementById("filter-btn-confirmed").className = mode === "confirmed" ? styles.active : styles.inactive;
       document.getElementById("filter-btn-cancelled").className = mode === "cancelled" ? styles.active : styles.inactive;
       renderCustomerList();
@@ -530,8 +547,11 @@
 
         if (!matchesQuery) return false;
 
+        if (customerFilter === "pending") {
+          return c.orders.some(o => o.status === "pending");
+        }
         if (customerFilter === "confirmed") {
-          return c.orders.some(o => o.status !== "cancelled");
+          return c.orders.some(o => o.status === "confirmed" || o.status === "delivered");
         }
         if (customerFilter === "cancelled") {
           return c.orders.some(o => o.status === "cancelled");
@@ -551,7 +571,8 @@
       }
 
       listEl.innerHTML = filtered.map(c => {
-        const activeCount = c.orders.filter(o => o.status !== "cancelled").length;
+        const pendingCount = c.orders.filter(o => o.status === "pending").length;
+        const confirmedCount = c.orders.filter(o => o.status === "confirmed" || o.status === "delivered").length;
         const cancelCount = c.orders.filter(o => o.status === "cancelled").length;
         const isSelected = c.uid === selectedCustomerUid;
 
@@ -572,7 +593,8 @@
                 <div class="text-[11px] text-slate-400 truncate">${escapeHtml(c.email || "No email")}</div>
               </div>
               <div class="flex flex-col items-end gap-1 shrink-0">
-                ${activeCount > 0 ? `<span class="bg-emerald-500/20 text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-full">${activeCount} Confirmed</span>` : ""}
+                ${pendingCount > 0 ? `<span class="bg-amber-500/20 text-amber-300 text-[10px] font-bold px-2 py-0.5 rounded-full">${pendingCount} Pending</span>` : ""}
+                ${confirmedCount > 0 ? `<span class="bg-emerald-500/20 text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-full">${confirmedCount} Confirmed</span>` : ""}
                 ${cancelCount > 0 ? `<span class="bg-rose-500/20 text-rose-300 text-[10px] font-bold px-2 py-0.5 rounded-full">${cancelCount} Cancelled</span>` : ""}
               </div>
             </div>
@@ -628,6 +650,9 @@
       document.getElementById("tab-orders-all").className = tab === "all"
         ? "px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-600 text-white transition"
         : "px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-400 transition";
+      document.getElementById("tab-orders-pending").className = tab === "pending"
+        ? "px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 transition"
+        : "px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 transition";
       document.getElementById("tab-orders-confirmed").className = tab === "confirmed"
         ? "px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-500 text-slate-950 transition"
         : "px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 transition";
@@ -640,14 +665,17 @@
     }
 
     function renderCustomerOrders(customer) {
-      const confirmedOrders = customer.orders.filter(o => o.status !== "cancelled");
+      const pendingOrders = customer.orders.filter(o => o.status === "pending");
+      const confirmedOrders = customer.orders.filter(o => o.status === "confirmed" || o.status === "delivered");
       const cancelledOrders = customer.orders.filter(o => o.status === "cancelled");
 
       document.getElementById("count-all").textContent = customer.orders.length;
+      document.getElementById("count-pending").textContent = pendingOrders.length;
       document.getElementById("count-confirmed").textContent = confirmedOrders.length;
       document.getElementById("count-cancelled").textContent = cancelledOrders.length;
 
       let ordersToShow = customer.orders;
+      if (orderTab === "pending") ordersToShow = pendingOrders;
       if (orderTab === "confirmed") ordersToShow = confirmedOrders;
       if (orderTab === "cancelled") ordersToShow = cancelledOrders;
 
@@ -658,16 +686,25 @@
       }
 
       listEl.innerHTML = ordersToShow.map(order => {
+        const isPending = order.status === "pending";
         const isCancelled = order.status === "cancelled";
         const isDelivered = order.status === "delivered";
 
         const badgeClass = isCancelled
           ? "bg-rose-500/20 text-rose-300 border-rose-500/30"
-          : isDelivered
-            ? "bg-sky-500/20 text-sky-300 border-sky-500/30"
-            : "bg-emerald-500/20 text-emerald-300 border-emerald-500/30";
+          : isPending
+            ? "bg-amber-500/20 text-amber-300 border-amber-500/30"
+            : isDelivered
+              ? "bg-sky-500/20 text-sky-300 border-sky-500/30"
+              : "bg-emerald-500/20 text-emerald-300 border-emerald-500/30";
 
-        const cardBorder = isCancelled ? "border-rose-500/30" : isDelivered ? "border-sky-500/30" : "border-emerald-500/30";
+        const cardBorder = isCancelled
+          ? "border-rose-500/30"
+          : isPending
+            ? "border-amber-500/30"
+            : isDelivered
+              ? "border-sky-500/30"
+              : "border-emerald-500/30";
 
         const items = [];
         if (order.items?.milkLiters > 0) items.push(`🥛 ${order.items.milkLiters}L Milk`);
@@ -705,7 +742,12 @@
             ${isCancelled && order.cancelReason ? `<div class="text-[11px] text-rose-300 bg-rose-950/40 rounded-lg px-3 py-1.5">Cancel Reason: ${escapeHtml(order.cancelReason)} (${order.cancelledAt ? new Date(order.cancelledAt).toLocaleString() : ""})</div>` : ""}
 
             <div class="flex items-center justify-end gap-2 pt-1 flex-wrap">
-              ${order.status !== "delivered" && !isCancelled ? `
+              ${isPending ? `
+                <button type="button" onclick="adminUpdateOrderStatus('${escapeHtml(customer.uid)}', '${escapeHtml(order.id)}', 'confirmed')" class="text-[11px] font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-3.5 py-1.5 rounded-lg transition shadow-md">
+                  ✓ Confirm Order
+                </button>
+              ` : ""}
+              ${!isPending && !isDelivered && !isCancelled ? `
                 <button type="button" onclick="adminUpdateOrderStatus('${escapeHtml(customer.uid)}', '${escapeHtml(order.id)}', 'delivered')" class="text-[11px] font-bold bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-500/30 px-3 py-1.5 rounded-lg transition">
                   ✓ Mark Delivered
                 </button>
@@ -719,6 +761,9 @@
                   ↻ Re-confirm Order
                 </button>
               `}
+              <button type="button" onclick="adminDeleteOrder('${escapeHtml(customer.uid)}', '${escapeHtml(order.id)}')" class="text-[11px] font-bold bg-rose-950/50 hover:bg-rose-900/60 text-rose-300 border border-rose-600/40 px-3 py-1.5 rounded-lg transition">
+                🗑 Delete Order
+              </button>
             </div>
           </div>
         `;
@@ -742,6 +787,17 @@
         await loadAdminData();
       } catch (err) {
         alert("Failed to update order: " + err.message);
+      }
+    }
+
+    async function adminDeleteOrder(uid, orderId) {
+      if (!confirm(`Are you sure you want to permanently delete order ${orderId}? This action cannot be undone.`)) return;
+
+      try {
+        await rtdb.ref(`orders/${uid}/${orderId}`).remove();
+        await loadAdminData();
+      } catch (err) {
+        alert("Failed to delete order: " + err.message);
       }
     }
 
