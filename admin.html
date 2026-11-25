@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Control Center — PureDrop Dairy Delivery</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Firebase SDK (Compat Version) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
+  <script src="firebase-config.js"></script>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
+
+  <!-- Top Navbar -->
+  <header class="sticky top-0 z-40 bg-slate-900/95 backdrop-blur border-b border-slate-800 px-4 sm:px-8 py-3.5 flex items-center justify-between gap-3">
+    <div class="flex items-center gap-3">
+      <a href="index.html" class="text-slate-400 hover:text-white text-xs sm:text-sm font-semibold transition">← Storefront</a>
+      <span class="text-slate-700">|</span>
+      <div class="flex items-center gap-2">
+        <span class="text-lg sm:text-xl font-black text-yellow-400">🥛 দুধ লাগবে?</span>
+        <span class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full">Admin Panel</span>
+      </div>
+    </div>
+
+    <div id="admin-nav-user" class="flex items-center gap-2 shrink-0"></div>
+  </header>
+
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8">
+
+    <!-- 1. ADMIN SIGN-IN GATE -->
+    <section id="admin-auth-section" class="max-w-md mx-auto mt-10 bg-slate-900 border border-slate-800 rounded-3xl p-8 text-center shadow-2xl">
+      <div class="w-16 h-16 bg-emerald-500/15 border border-emerald-500/30 rounded-2xl flex items-center justify-center mx-auto mb-5 text-3xl">
+        🛡️
+      </div>
+      <h1 class="text-2xl font-black text-white mb-2">PureDrop Admin Access</h1>
+      <p class="text-xs sm:text-sm text-slate-400 mb-6">
+        Sign in with your authorized Admin Google account to search customers, inspect GPS pins, and manage confirmed &amp; cancelled orders.
+      </p>
+
+      <button onclick="signInAdmin()" class="w-full flex items-center justify-center gap-3 bg-white hover:bg-slate-100 text-slate-900 font-bold py-3.5 px-6 rounded-2xl shadow-lg transition active:scale-95">
+        <svg class="w-5 h-5" viewBox="0 0 24 24">
+          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+        </svg>
+        <span>Sign in with Admin Google Account</span>
+      </button>
+    </section>
+
+    <!-- 2. UNAUTHORIZED SCREEN -->
+    <section id="admin-denied-section" class="hidden max-w-lg mx-auto mt-10 bg-rose-950/30 border border-rose-500/40 rounded-3xl p-8 text-center shadow-2xl space-y-4">
+      <div class="text-4xl">🚫</div>
+      <h2 class="text-xl font-black text-white">Access Denied — Admin Only</h2>
+      <p class="text-xs sm:text-sm text-rose-200">
+        Signed in as <strong id="denied-email" class="text-white"></strong>, which is not listed as an authorized admin in <code class="bg-slate-900 px-1.5 py-0.5 rounded">ADMIN_EMAILS</code>.
+      </p>
+      <button onclick="signOutAdmin()" class="bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold px-5 py-2.5 rounded-xl border border-slate-700 transition">
+        Switch Google Account
+      </button>
+    </section>
+
+    <!-- 3. MAIN ADMIN DASHBOARD -->
+    <section id="admin-dashboard" class="hidden space-y-6">
+
+      <!-- Permission / Rules Warning Banner (if RTDB blocks admin read) -->
+      <div id="admin-rules-alert" class="hidden bg-rose-950/60 border border-rose-500/50 rounded-2xl p-5 text-xs text-rose-100 space-y-2">
+        <div class="font-black text-sm text-rose-300 flex items-center gap-2">
+          <span>⚠️</span> <span>Firebase Realtime Database Rules Need Admin Read/Write Permission</span>
+        </div>
+        <p class="text-rose-200">
+          Your database blocked reading all customers/orders. Open <strong>Firebase Console &gt; Realtime Database &gt; Rules</strong>, paste these rules so your Admin email (<span id="rules-admin-email" class="font-mono font-bold text-white"></span>) can manage all records, and click <strong>Publish</strong>:
+        </p>
+        <pre id="rules-snippet" class="bg-slate-950 border border-slate-800 rounded-xl p-3 font-mono text-[11px] text-emerald-300 overflow-x-auto"></pre>
+      </div>
+
+      <!-- KPI Summary Bar -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5">
+          <div class="text-[11px] font-bold uppercase text-slate-400">Total Customers</div>
+          <div id="stat-customers" class="text-2xl sm:text-3xl font-black text-white mt-1">0</div>
+          <div class="text-[11px] text-slate-500 mt-1">Registered profiles</div>
+        </div>
+        <div class="bg-slate-900 border border-emerald-500/30 rounded-2xl p-4 sm:p-5">
+          <div class="text-[11px] font-bold uppercase text-emerald-400">Confirmed Orders</div>
+          <div id="stat-confirmed" class="text-2xl sm:text-3xl font-black text-emerald-400 mt-1">0</div>
+          <div id="stat-milk-summary" class="text-[11px] text-slate-400 mt-1">0L Milk • 0 Ghee • 0 Doi</div>
+        </div>
+        <div class="bg-slate-900 border border-rose-500/30 rounded-2xl p-4 sm:p-5">
+          <div class="text-[11px] font-bold uppercase text-rose-400">Cancelled Orders</div>
+          <div id="stat-cancelled" class="text-2xl sm:text-3xl font-black text-rose-400 mt-1">0</div>
+          <div class="text-[11px] text-slate-500 mt-1">Cancelled by customer/admin</div>
+        </div>
+        <div class="bg-slate-900 border border-amber-500/30 rounded-2xl p-4 sm:p-5">
+          <div class="text-[11px] font-bold uppercase text-amber-400">Active Revenue</div>
+          <div id="stat-revenue" class="text-2xl sm:text-3xl font-black text-amber-300 mt-1">৳0</div>
+          <div class="text-[11px] text-slate-500 mt-1">Confirmed + Delivered</div>
+        </div>
+      </div>
+
+      <!-- Search & Filter Controls -->
+      <div class="bg-slate-900 border border-slate-800 rounded-3xl p-4 sm:p-6 space-y-4">
+        <div class="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+          <div class="relative flex-1">
+            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
+            <input
+              type="text"
+              id="admin-search-input"
+              oninput="handleSearch()"
+              placeholder="Search customer by Name, Phone (+880 / 017...), or Email..."
+              class="w-full bg-slate-950 border border-slate-700 focus:border-emerald-500 rounded-2xl pl-11 pr-10 py-3 text-sm text-white placeholder-slate-500 focus:outline-none"
+            />
+            <button id="clear-search-btn" onclick="clearSearch()" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-white bg-slate-800 px-2 py-1 rounded-lg">
+              Clear
+            </button>
+          </div>
+
+          <div class="flex items-center gap-2 flex-wrap">
+            <button onclick="setCustomerFilter('all')" id="filter-btn-all" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-500 text-slate-950 transition">All Users</button>
+            <button onclick="setCustomerFilter('confirmed')" id="filter-btn-confirmed" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition">With Confirmed Orders</button>
+            <button onclick="setCustomerFilter('cancelled')" id="filter-btn-cancelled" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition">With Cancelled Orders</button>
+            <button onclick="loadAdminData()" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-sky-500/20 text-sky-300 border border-sky-500/30 hover:bg-sky-500/30 transition">↻ Refresh</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Two-Column Master/Detail Workspace -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+        <!-- LEFT: Customer Search Results List -->
+        <div class="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-3xl p-4 sm:p-5 space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <h2 class="text-sm font-black uppercase tracking-wider text-slate-300">Customers (<span id="matching-count">0</span>)</h2>
+            <span class="text-[11px] text-slate-500">Click a customer to inspect</span>
+          </div>
+
+          <div id="customer-list" class="space-y-2.5 max-h-[65vh] overflow-y-auto pr-1">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+
+        <!-- RIGHT: Selected Customer Details + Confirmed & Cancelled Orders -->
+        <div class="lg:col-span-7 space-y-6">
+
+          <!-- Empty State when no customer selected -->
+          <div id="no-customer-selected" class="bg-slate-900 border border-slate-800 rounded-3xl p-10 text-center space-y-3">
+            <div class="text-4xl">👈</div>
+            <h3 class="text-lg font-black text-white">Select a Customer</h3>
+            <p class="text-xs sm:text-sm text-slate-400 max-w-md mx-auto">
+              Search by phone number, email address, or name on the left, then click any customer to view their full profile, GPS pin, confirmed orders, and cancelled orders.
+            </p>
+          </div>
+
+          <!-- Selected Customer Detail Card -->
+          <div id="customer-detail-panel" class="hidden space-y-6">
+
+            <!-- Profile Info Card -->
+            <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-7 space-y-5 shadow-xl">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+                <div>
+                  <span class="text-[10px] font-extrabold uppercase tracking-wider text-emerald-400 bg-emerald-500/15 px-2.5 py-0.5 rounded-full">Customer Profile</span>
+                  <h2 id="detail-name" class="text-xl sm:text-2xl font-black text-white mt-1.5"></h2>
+                  <p id="detail-uid" class="text-[11px] font-mono text-slate-500 mt-0.5"></p>
+                </div>
+
+                <div class="flex items-center gap-2 flex-wrap">
+                  <a id="detail-call-link" href="#" class="inline-flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs px-4 py-2.5 rounded-xl transition">
+                    <span>📞</span> <span>Call Customer</span>
+                  </a>
+                  <a id="detail-map-link" href="#" target="_blank" rel="noopener noreferrer" class="hidden inline-flex items-center gap-1.5 bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-500/40 font-bold text-xs px-4 py-2.5 rounded-xl transition">
+                    <span>📍</span> <span>Google Maps Pin ↗</span>
+                  </a>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                <div class="bg-slate-950/70 border border-slate-800 rounded-2xl p-3.5 space-y-1">
+                  <span class="text-[10px] font-bold uppercase text-slate-500">Phone Number</span>
+                  <div id="detail-phone" class="font-bold text-emerald-400 text-sm"></div>
+                </div>
+                <div class="bg-slate-950/70 border border-slate-800 rounded-2xl p-3.5 space-y-1">
+                  <span class="text-[10px] font-bold uppercase text-slate-500">Email Address</span>
+                  <div id="detail-email" class="font-semibold text-white text-sm break-all"></div>
+                </div>
+                <div class="bg-slate-950/70 border border-slate-800 rounded-2xl p-3.5 space-y-1 sm:col-span-2">
+                  <span class="text-[10px] font-bold uppercase text-slate-500">Doorstep Address &amp; Coordinates</span>
+                  <div id="detail-address" class="font-semibold text-slate-200 text-sm"></div>
+                  <div id="detail-gps" class="text-[11px] font-mono text-slate-400 pt-1"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Customer Orders Section: Confirmed vs Cancelled Tabs -->
+            <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-7 space-y-5 shadow-xl">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+                <h3 class="text-base sm:text-lg font-black text-white">Order History</h3>
+                <div class="flex items-center gap-2 flex-wrap">
+                  <button onclick="setOrderTab('all')" id="tab-orders-all" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-700 text-white transition">All (<span id="count-all">0</span>)</button>
+                  <button onclick="setOrderTab('confirmed')" id="tab-orders-confirmed" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 transition">Confirmed (<span id="count-confirmed">0</span>)</button>
+                  <button onclick="setOrderTab('cancelled')" id="tab-orders-cancelled" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-rose-500/15 text-rose-300 border border-rose-500/30 transition">Cancelled (<span id="count-cancelled">0</span>)</button>
+                </div>
+              </div>
+
+              <div id="customer-orders-list" class="space-y-4">
+                <!-- Rendered dynamically -->
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    // Authorized Admin Emails (add more emails here if needed)
+    const ADMIN_EMAILS = [
+      "rejwandew91@gmail.com",
+      "rejwandew88@gmail.com"
+    ];
+
+    const FIREBASE_APP_CONFIG = (window.FIREBASE_CONFIG && window.isFirebaseConfigured && window.isFirebaseConfigured())
+      ? window.FIREBASE_CONFIG
+      : {
+          apiKey: "AIzaSyAX9XrBuxDe--SdegCg46FeZIAauZwYfvk",
+          authDomain: "puredrop-dairy-6b4a9.firebaseapp.com",
+          databaseURL: "https://puredrop-dairy-6b4a9-default-rtdb.firebaseio.com",
+          projectId: "puredrop-dairy-6b4a9",
+          storageBucket: "puredrop-dairy-6b4a9.firebasestorage.app",
+          messagingSenderId: "825921705426",
+          appId: "1:825921705426:web:25df4cbd3836c935a0a40b",
+          measurementId: "G-SYRSEKKCMV"
+        };
+
+    let auth = null;
+    let rtdb = null;
+    let adminUser = null;
+
+    // In-memory store built from Realtime Database
+    let allCustomers = []; // [{ uid, name, email, phone, lastAddress, lastArea, lastCity, lastLocation, orders: [...] }]
+    let selectedCustomerUid = null;
+    let customerFilter = "all"; // 'all' | 'confirmed' | 'cancelled'
+    let orderTab = "all"; // 'all' | 'confirmed' | 'cancelled'
+
+    function escapeHtml(str) {
+      return String(str ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function initAdmin() {
+      if (!firebase.apps.length) {
+        firebase.initializeApp(FIREBASE_APP_CONFIG);
+      }
+      auth = firebase.auth();
+      rtdb = firebase.database();
+
+      auth.onAuthStateChanged((user) => {
+        if (!user) {
+          adminUser = null;
+          document.getElementById("admin-nav-user").innerHTML = "";
+          document.getElementById("admin-auth-section").classList.remove("hidden");
+          document.getElementById("admin-denied-section").classList.add("hidden");
+          document.getElementById("admin-dashboard").classList.add("hidden");
+          return;
+        }
+
+        const email = (user.email || "").toLowerCase();
+        const isAllowed = ADMIN_EMAILS.map(e => e.toLowerCase()).includes(email);
+
+        document.getElementById("admin-nav-user").innerHTML = `
+          <div class="flex items-center gap-2">
+            <img src="${escapeHtml(user.photoURL || '')}" class="w-7 h-7 rounded-full border border-emerald-400" />
+            <span class="text-xs font-semibold text-slate-200 hidden sm:inline">${escapeHtml(user.email)}</span>
+            <button onclick="signOutAdmin()" class="text-xs text-slate-300 hover:text-rose-400 px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700">Log out</button>
+          </div>
+        `;
+
+        document.getElementById("admin-auth-section").classList.add("hidden");
+
+        if (!isAllowed) {
+          document.getElementById("denied-email").textContent = user.email || "Unknown";
+          document.getElementById("admin-denied-section").classList.remove("hidden");
+          document.getElementById("admin-dashboard").classList.add("hidden");
+          return;
+        }
+
+        adminUser = user;
+        document.getElementById("admin-denied-section").classList.add("hidden");
+        document.getElementById("admin-dashboard").classList.remove("hidden");
+        loadAdminData();
+      });
+    }
+
+    async function signInAdmin() {
+      try {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        await auth.signInWithPopup(provider);
+      } catch (err) {
+        alert("Google Sign-In Error: " + err.message);
+      }
+    }
+
+    async function signOutAdmin() {
+      if (auth) await auth.signOut();
+    }
+
+    // Load all customers and all orders from Firebase Realtime Database
+    async function loadAdminData() {
+      if (!rtdb || !adminUser) return;
+      const rulesAlert = document.getElementById("admin-rules-alert");
+      rulesAlert.classList.add("hidden");
+
+      try {
+        const [custSnap, ordersSnap] = await Promise.all([
+          rtdb.ref("customers").once("value"),
+          rtdb.ref("orders").once("value")
+        ]);
+
+        const customersMap = {};
+        const custData = custSnap.val() || {};
+        Object.keys(custData).forEach(uid => {
+          customersMap[uid] = {
+            uid,
+            name: custData[uid].name || "Unnamed Customer",
+            email: custData[uid].email || "",
+            phone: custData[uid].phone || "",
+            lastAddress: custData[uid].lastAddress || "",
+            lastArea: custData[uid].lastArea || "",
+            lastCity: custData[uid].lastCity || "",
+            lastLocation: custData[uid].lastLocation || null,
+            updatedAt: custData[uid].updatedAt || "",
+            orders: []
+          };
+        });
+
+        const ordersData = ordersSnap.val() || {};
+        Object.keys(ordersData).forEach(uid => {
+          const userOrders = ordersData[uid] || {};
+          Object.keys(userOrders).forEach(orderId => {
+            const ord = userOrders[orderId];
+            if (!ord) return;
+
+            // Ensure customer exists in map even if customer profile node was missing
+            if (!customersMap[uid]) {
+              customersMap[uid] = {
+                uid,
+                name: ord.customerName || "Customer",
+                email: ord.email || "",
+                phone: ord.phone || "",
+                lastAddress: ord.address || "",
+                lastArea: ord.area || "",
+                lastCity: ord.city || "",
+                lastLocation: ord.location || null,
+                updatedAt: ord.createdAt || "",
+                orders: []
+              };
+            } else {
+              // Fill missing profile fields from latest order
+              if (!customersMap[uid].phone && ord.phone) customersMap[uid].phone = ord.phone;
+              if (!customersMap[uid].email && ord.email) customersMap[uid].email = ord.email;
+              if (!customersMap[uid].lastAddress && ord.address) customersMap[uid].lastAddress = ord.address;
+            }
+
+            customersMap[uid].orders.push({ id: orderId, uid, ...ord });
+          });
+        });
+
+        allCustomers = Object.values(customersMap).map(c => {
+          c.orders.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+          return c;
+        });
+
+        // Sort customers by most recent activity
+        allCustomers.sort((a, b) => {
+          const aDate = a.orders[0]?.createdAt || a.updatedAt || "";
+          const bDate = b.orders[0]?.createdAt || b.updatedAt || "";
+          return new Date(bDate || 0) - new Date(aDate || 0);
+        });
+
+        updateDashboardStats();
+        renderCustomerList();
+
+        if (selectedCustomerUid) {
+          selectCustomer(selectedCustomerUid);
+        }
+      } catch (err) {
+        console.error("Admin data load error:", err);
+        const msg = (err.message || "").toLowerCase();
+        if (err.code === "PERMISSION_DENIED" || msg.includes("permission")) {
+          showRulesHelper();
+        } else {
+          alert("Failed to load database: " + err.message);
+        }
+      }
+    }
+
+    function showRulesHelper() {
+      const email = adminUser?.email || "rejwandew91@gmail.com";
+      document.getElementById("rules-admin-email").textContent = email;
+      document.getElementById("rules-snippet").textContent = JSON.stringify({
+        rules: {
+          customers: {
+            ".read": `auth != null && (auth.token.email === 'rejwandew91@gmail.com' || auth.token.email === 'rejwandew88@gmail.com')`,
+            "$uid": {
+              ".read": `auth != null && (auth.uid === $uid || auth.token.email === 'rejwandew91@gmail.com' || auth.token.email === 'rejwandew88@gmail.com')`,
+              ".write": `auth != null && (auth.uid === $uid || auth.token.email === 'rejwandew91@gmail.com' || auth.token.email === 'rejwandew88@gmail.com')`
+            }
+          },
+          orders: {
+            ".read": `auth != null && (auth.token.email === 'rejwandew91@gmail.com' || auth.token.email === 'rejwandew88@gmail.com')`,
+            "$uid": {
+              ".read": `auth != null && (auth.uid === $uid || auth.token.email === 'rejwandew91@gmail.com' || auth.token.email === 'rejwandew88@gmail.com')`,
+              ".write": `auth != null && (auth.uid === $uid || auth.token.email === 'rejwandew91@gmail.com' || auth.token.email === 'rejwandew88@gmail.com')`
+            }
+          }
+        }
+      }, null, 2);
+      document.getElementById("admin-rules-alert").classList.remove("hidden");
+    }
+
+    function updateDashboardStats() {
+      let confirmedCount = 0;
+      let cancelledCount = 0;
+      let revenue = 0;
+      let totalMilk = 0, totalGhee = 0, totalDoi = 0;
+
+      allCustomers.forEach(c => {
+        c.orders.forEach(o => {
+          if (o.status === "cancelled") {
+            cancelledCount++;
+          } else {
+            confirmedCount++;
+            revenue += Number(o.totalAmount || 0);
+            if (o.status === "confirmed" || o.status === "pending") {
+              totalMilk += Number(o.items?.milkLiters || 0);
+              totalGhee += Number(o.items?.gheeJars || 0);
+              totalDoi += Number(o.items?.doiPots || 0);
+            }
+          }
+        });
+      });
+
+      document.getElementById("stat-customers").textContent = allCustomers.length;
+      document.getElementById("stat-confirmed").textContent = confirmedCount;
+      document.getElementById("stat-cancelled").textContent = cancelledCount;
+      document.getElementById("stat-revenue").textContent = "৳" + revenue.toLocaleString();
+      document.getElementById("stat-milk-summary").textContent = `${totalMilk}L Milk • ${totalGhee} Ghee • ${totalDoi} Doi pending`;
+    }
+
+    function handleSearch() {
+      const val = document.getElementById("admin-search-input").value.trim();
+      document.getElementById("clear-search-btn").classList.toggle("hidden", val.length === 0);
+      renderCustomerList();
+    }
+
+    function clearSearch() {
+      document.getElementById("admin-search-input").value = "";
+      document.getElementById("clear-search-btn").classList.add("hidden");
+      renderCustomerList();
+    }
+
+    function setCustomerFilter(mode) {
+      customerFilter = mode;
+      const styles = {
+        active: "px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-500 text-slate-950 transition",
+        inactive: "px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition"
+      };
+      document.getElementById("filter-btn-all").className = mode === "all" ? styles.active : styles.inactive;
+      document.getElementById("filter-btn-confirmed").className = mode === "confirmed" ? styles.active : styles.inactive;
+      document.getElementById("filter-btn-cancelled").className = mode === "cancelled" ? styles.active : styles.inactive;
+      renderCustomerList();
+    }
+
+    function renderCustomerList() {
+      const query = document.getElementById("admin-search-input").value.trim().toLowerCase();
+      const listEl = document.getElementById("customer-list");
+
+      const filtered = allCustomers.filter(c => {
+        const matchesQuery = !query ||
+          (c.name || "").toLowerCase().includes(query) ||
+          (c.email || "").toLowerCase().includes(query) ||
+          (c.phone || "").toLowerCase().includes(query);
+
+        if (!matchesQuery) return false;
+
+        if (customerFilter === "confirmed") {
+          return c.orders.some(o => o.status !== "cancelled");
+        }
+        if (customerFilter === "cancelled") {
+          return c.orders.some(o => o.status === "cancelled");
+        }
+        return true;
+      });
+
+      document.getElementById("matching-count").textContent = filtered.length;
+
+      if (filtered.length === 0) {
+        listEl.innerHTML = `
+          <div class="text-center py-8 text-xs text-slate-500">
+            No customers matched your search or filter.
+          </div>
+        `;
+        return;
+      }
+
+      listEl.innerHTML = filtered.map(c => {
+        const activeCount = c.orders.filter(o => o.status !== "cancelled").length;
+        const cancelCount = c.orders.filter(o => o.status === "cancelled").length;
+        const isSelected = c.uid === selectedCustomerUid;
+
+        return `
+          <button
+            type="button"
+            onclick="selectCustomer('${escapeHtml(c.uid)}')"
+            class="w-full text-left p-4 rounded-2xl border transition ${
+              isSelected
+                ? "bg-emerald-950/40 border-emerald-500 shadow-lg"
+                : "bg-slate-950/60 border-slate-800 hover:border-slate-600"
+            }"
+          >
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0">
+                <div class="font-bold text-white text-sm truncate">${escapeHtml(c.name)}</div>
+                <div class="text-xs font-semibold text-emerald-400 mt-0.5">${escapeHtml(c.phone || "No phone")}</div>
+                <div class="text-[11px] text-slate-400 truncate">${escapeHtml(c.email || "No email")}</div>
+              </div>
+              <div class="flex flex-col items-end gap-1 shrink-0">
+                ${activeCount > 0 ? `<span class="bg-emerald-500/20 text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-full">${activeCount} Confirmed</span>` : ""}
+                ${cancelCount > 0 ? `<span class="bg-rose-500/20 text-rose-300 text-[10px] font-bold px-2 py-0.5 rounded-full">${cancelCount} Cancelled</span>` : ""}
+              </div>
+            </div>
+          </button>
+        `;
+      }).join("");
+    }
+
+    function selectCustomer(uid) {
+      selectedCustomerUid = uid;
+      const customer = allCustomers.find(c => c.uid === uid);
+      if (!customer) return;
+
+      renderCustomerList();
+
+      document.getElementById("no-customer-selected").classList.add("hidden");
+      document.getElementById("customer-detail-panel").classList.remove("hidden");
+
+      document.getElementById("detail-name").textContent = customer.name || "Customer";
+      document.getElementById("detail-uid").textContent = "UID: " + customer.uid;
+      document.getElementById("detail-phone").textContent = customer.phone || "Not provided";
+      document.getElementById("detail-email").textContent = customer.email || "Not provided";
+
+      const fullAddress = [customer.lastAddress, customer.lastArea, customer.lastCity].filter(Boolean).join(", ");
+      document.getElementById("detail-address").textContent = fullAddress || "No street address saved";
+
+      const callLink = document.getElementById("detail-call-link");
+      if (customer.phone) {
+        callLink.href = "tel:" + customer.phone;
+        callLink.classList.remove("hidden");
+      } else {
+        callLink.classList.add("hidden");
+      }
+
+      const mapLink = document.getElementById("detail-map-link");
+      const gpsText = document.getElementById("detail-gps");
+      const loc = customer.lastLocation;
+      if (loc && loc.latitude && loc.longitude) {
+        const mapsUrl = loc.googleMapsUrl || `https://www.google.com/maps?q=${loc.latitude},${loc.longitude}`;
+        mapLink.href = mapsUrl;
+        mapLink.classList.remove("hidden");
+        gpsText.textContent = `GPS: ${Number(loc.latitude).toFixed(6)}°, ${Number(loc.longitude).toFixed(6)}° (±${loc.accuracy || "?"}m)`;
+      } else {
+        mapLink.classList.add("hidden");
+        gpsText.textContent = "GPS coordinates not captured (manual address only)";
+      }
+
+      renderCustomerOrders(customer);
+    }
+
+    function setOrderTab(tab) {
+      orderTab = tab;
+      document.getElementById("tab-orders-all").className = tab === "all"
+        ? "px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-600 text-white transition"
+        : "px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-400 transition";
+      document.getElementById("tab-orders-confirmed").className = tab === "confirmed"
+        ? "px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-500 text-slate-950 transition"
+        : "px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 transition";
+      document.getElementById("tab-orders-cancelled").className = tab === "cancelled"
+        ? "px-3 py-1.5 rounded-xl text-xs font-bold bg-rose-500 text-white transition"
+        : "px-3 py-1.5 rounded-xl text-xs font-bold bg-rose-500/15 text-rose-300 border border-rose-500/30 transition";
+
+      const customer = allCustomers.find(c => c.uid === selectedCustomerUid);
+      if (customer) renderCustomerOrders(customer);
+    }
+
+    function renderCustomerOrders(customer) {
+      const confirmedOrders = customer.orders.filter(o => o.status !== "cancelled");
+      const cancelledOrders = customer.orders.filter(o => o.status === "cancelled");
+
+      document.getElementById("count-all").textContent = customer.orders.length;
+      document.getElementById("count-confirmed").textContent = confirmedOrders.length;
+      document.getElementById("count-cancelled").textContent = cancelledOrders.length;
+
+      let ordersToShow = customer.orders;
+      if (orderTab === "confirmed") ordersToShow = confirmedOrders;
+      if (orderTab === "cancelled") ordersToShow = cancelledOrders;
+
+      const listEl = document.getElementById("customer-orders-list");
+      if (ordersToShow.length === 0) {
+        listEl.innerHTML = `<div class="text-center py-8 text-xs text-slate-500">No orders in this category.</div>`;
+        return;
+      }
+
+      listEl.innerHTML = ordersToShow.map(order => {
+        const isCancelled = order.status === "cancelled";
+        const isDelivered = order.status === "delivered";
+
+        const badgeClass = isCancelled
+          ? "bg-rose-500/20 text-rose-300 border-rose-500/30"
+          : isDelivered
+            ? "bg-sky-500/20 text-sky-300 border-sky-500/30"
+            : "bg-emerald-500/20 text-emerald-300 border-emerald-500/30";
+
+        const cardBorder = isCancelled ? "border-rose-500/30" : isDelivered ? "border-sky-500/30" : "border-emerald-500/30";
+
+        const items = [];
+        if (order.items?.milkLiters > 0) items.push(`🥛 ${order.items.milkLiters}L Milk`);
+        if (order.items?.gheeJars > 0) items.push(`🍯 ${order.items.gheeJars}x Ghee`);
+        if (order.items?.doiPots > 0) items.push(`🥣 ${order.items.doiPots}x Doi`);
+
+        return `
+          <div class="bg-slate-950/70 border ${cardBorder} rounded-2xl p-4 space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="font-mono text-xs font-bold text-amber-300">${escapeHtml(order.id)}</span>
+                <span class="border text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full ${badgeClass}">${escapeHtml(order.status || "confirmed")}</span>
+              </div>
+              <span class="text-[11px] text-slate-400">
+                ${order.createdAt ? new Date(order.createdAt).toLocaleString() : ""}
+              </span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+              <div>
+                <div class="text-[10px] text-slate-500 font-bold uppercase">Items</div>
+                <div class="font-semibold text-white mt-0.5">${items.join(" • ") || "Dairy Order"}</div>
+              </div>
+              <div>
+                <div class="text-[10px] text-slate-500 font-bold uppercase">Morning Slot</div>
+                <div class="font-semibold text-emerald-400 mt-0.5">${escapeHtml(order.deliverySlot || "Morning")}</div>
+              </div>
+              <div>
+                <div class="text-[10px] text-slate-500 font-bold uppercase">Amount</div>
+                <div class="font-black text-white text-sm mt-0.5">৳${Number(order.totalAmount || 0).toLocaleString()}</div>
+              </div>
+            </div>
+
+            ${order.notes ? `<div class="text-[11px] text-slate-400 bg-slate-900 rounded-lg px-3 py-1.5">Note: ${escapeHtml(order.notes)}</div>` : ""}
+            ${isCancelled && order.cancelReason ? `<div class="text-[11px] text-rose-300 bg-rose-950/40 rounded-lg px-3 py-1.5">Cancel Reason: ${escapeHtml(order.cancelReason)} (${order.cancelledAt ? new Date(order.cancelledAt).toLocaleString() : ""})</div>` : ""}
+
+            <div class="flex items-center justify-end gap-2 pt-1 flex-wrap">
+              ${order.status !== "delivered" && !isCancelled ? `
+                <button type="button" onclick="adminUpdateOrderStatus('${escapeHtml(customer.uid)}', '${escapeHtml(order.id)}', 'delivered')" class="text-[11px] font-bold bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-500/30 px-3 py-1.5 rounded-lg transition">
+                  ✓ Mark Delivered
+                </button>
+              ` : ""}
+              ${!isCancelled ? `
+                <button type="button" onclick="adminUpdateOrderStatus('${escapeHtml(customer.uid)}', '${escapeHtml(order.id)}', 'cancelled')" class="text-[11px] font-bold bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 px-3 py-1.5 rounded-lg transition">
+                  ✕ Cancel Order
+                </button>
+              ` : `
+                <button type="button" onclick="adminUpdateOrderStatus('${escapeHtml(customer.uid)}', '${escapeHtml(order.id)}', 'confirmed')" class="text-[11px] font-bold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 px-3 py-1.5 rounded-lg transition">
+                  ↻ Re-confirm Order
+                </button>
+              `}
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    async function adminUpdateOrderStatus(uid, orderId, newStatus) {
+      if (!confirm(`Change order ${orderId} status to "${newStatus}"?`)) return;
+
+      const payload = {
+        status: newStatus,
+        updatedAt: new Date().toISOString()
+      };
+      if (newStatus === "cancelled") {
+        payload.cancelReason = "Cancelled by Admin";
+        payload.cancelledAt = new Date().toISOString();
+      }
+
+      try {
+        await rtdb.ref(`orders/${uid}/${orderId}`).update(payload);
+        await loadAdminData();
+      } catch (err) {
+        alert("Failed to update order: " + err.message);
+      }
+    }
+
+    window.addEventListener("DOMContentLoaded", initAdmin);
+  </script>
+</body>
+</html>
