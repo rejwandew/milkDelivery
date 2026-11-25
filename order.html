@@ -649,8 +649,36 @@
       }
     }
 
+    // Admin emails that automatically redirect to admin.html
+    const ADMIN_EMAILS = [
+      "rejwandew91@gmail.com",
+      "rejwandew88@gmail.com"
+    ];
+
     // Handle Authenticated State
-    function handleUserAuthenticated(user) {
+    async function handleUserAuthenticated(user) {
+      const bypassAdminRedirect = new URLSearchParams(window.location.search).get("mode") === "customer";
+
+      if (!bypassAdminRedirect) {
+        const email = (user.email || "").toLowerCase();
+        if (ADMIN_EMAILS.map(e => e.toLowerCase()).includes(email)) {
+          window.location.replace("admin.html");
+          return;
+        }
+        if (rtdb && user.uid) {
+          try {
+            const adminSnap = await withTimeout(rtdb.ref("admins/" + user.uid).once("value"), 2500);
+            const adminVal = adminSnap.val();
+            if (adminVal === true || (adminVal && adminVal.active === true)) {
+              window.location.replace("admin.html");
+              return;
+            }
+          } catch (e) {
+            // Regular customer (no read access to admins node) — continue normally
+          }
+        }
+      }
+
       currentUser = user;
 
       // Update Header Navbar

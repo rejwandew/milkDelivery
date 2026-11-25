@@ -27,6 +27,9 @@
         <span class="text-lg sm:text-xl font-black text-yellow-400">🥛 দুধ লাগবে?</span>
         <span class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full">Admin Panel</span>
       </div>
+      <a href="order.html?mode=customer" class="hidden md:inline-flex items-center gap-1 text-xs text-slate-400 hover:text-emerald-300 bg-slate-800/80 px-2.5 py-1 rounded-lg border border-slate-700 transition">
+        <span>Test Order Page ↗</span>
+      </a>
     </div>
 
     <div id="admin-nav-user" class="flex items-center gap-2 shrink-0"></div>
@@ -267,7 +270,7 @@
       auth = firebase.auth();
       rtdb = firebase.database();
 
-      auth.onAuthStateChanged((user) => {
+      auth.onAuthStateChanged(async (user) => {
         if (!user) {
           adminUser = null;
           document.getElementById("admin-nav-user").innerHTML = "";
@@ -278,7 +281,20 @@
         }
 
         const email = (user.email || "").toLowerCase();
-        const isAllowed = ADMIN_EMAILS.map(e => e.toLowerCase()).includes(email);
+        let isAllowed = ADMIN_EMAILS.map(e => e.toLowerCase()).includes(email);
+
+        // Also check /admins/{uid} node in Realtime Database
+        if (!isAllowed && rtdb && user.uid) {
+          try {
+            const adminSnap = await rtdb.ref("admins/" + user.uid).once("value");
+            const val = adminSnap.val();
+            if (val === true || (val && val.active === true)) {
+              isAllowed = true;
+            }
+          } catch (e) {
+            console.warn("Admins node check:", e);
+          }
+        }
 
         document.getElementById("admin-nav-user").innerHTML = `
           <div class="flex items-center gap-2">
@@ -300,6 +316,17 @@
         adminUser = user;
         document.getElementById("admin-denied-section").classList.add("hidden");
         document.getElementById("admin-dashboard").classList.remove("hidden");
+
+        // Sync verified admin into /admins/{uid} node in Realtime Database
+        if (rtdb && user.uid) {
+          rtdb.ref("admins/" + user.uid).update({
+            email: user.email || "",
+            name: user.displayName || "Admin",
+            active: true,
+            lastLogin: new Date().toISOString()
+          }).catch(() => {});
+        }
+
         loadAdminData();
       });
     }
@@ -409,21 +436,28 @@
 
     function showRulesHelper() {
       const email = adminUser?.email || "rejwandew91@gmail.com";
+      const isAdminExpr = "auth != null && (auth.token.email === 'rejwandew91@gmail.com' || auth.token.email === 'rejwandew88@gmail.com' || root.child('admins').child(auth.uid).child('active').val() === true)";
       document.getElementById("rules-admin-email").textContent = email;
       document.getElementById("rules-snippet").textContent = JSON.stringify({
         rules: {
-          customers: {
-            ".read": `auth != null && (auth.token.email === 'rejwandew91@gmail.com' || auth.token.email === 'rejwandew88@gmail.com')`,
+          admins: {
             "$uid": {
-              ".read": `auth != null && (auth.uid === $uid || auth.token.email === 'rejwandew91@gmail.com' || auth.token.email === 'rejwandew88@gmail.com')`,
-              ".write": `auth != null && (auth.uid === $uid || auth.token.email === 'rejwandew91@gmail.com' || auth.token.email === 'rejwandew88@gmail.com')`
+              ".read": "auth != null && (auth.uid === $uid || auth.token.email === 'rejwandew91@gmail.com' || auth.token.email === 'rejwandew88@gmail.com')",
+              ".write": "auth != null && (auth.token.email === 'rejwandew91@gmail.com' || auth.token.email === 'rejwandew88@gmail.com')"
+            }
+          },
+          customers: {
+            ".read": isAdminExpr,
+            "$uid": {
+              ".read": `auth != null && (auth.uid === $uid || auth.token.email === 'rejwandew91@gmail.com' || auth.token.email === 'rejwandew88@gmail.com' || root.child('admins').child(auth.uid).child('active').val() === true)`,
+              ".write": `auth != null && (auth.uid === $uid || auth.token.email === 'rejwandew91@gmail.com' || auth.token.email === 'rejwandew88@gmail.com' || root.child('admins').child(auth.uid).child('active').val() === true)`
             }
           },
           orders: {
-            ".read": `auth != null && (auth.token.email === 'rejwandew91@gmail.com' || auth.token.email === 'rejwandew88@gmail.com')`,
+            ".read": isAdminExpr,
             "$uid": {
-              ".read": `auth != null && (auth.uid === $uid || auth.token.email === 'rejwandew91@gmail.com' || auth.token.email === 'rejwandew88@gmail.com')`,
-              ".write": `auth != null && (auth.uid === $uid || auth.token.email === 'rejwandew91@gmail.com' || auth.token.email === 'rejwandew88@gmail.com')`
+              ".read": `auth != null && (auth.uid === $uid || auth.token.email === 'rejwandew91@gmail.com' || auth.token.email === 'rejwandew88@gmail.com' || root.child('admins').child(auth.uid).child('active').val() === true)`,
+              ".write": `auth != null && (auth.uid === $uid || auth.token.email === 'rejwandew91@gmail.com' || auth.token.email === 'rejwandew88@gmail.com' || root.child('admins').child(auth.uid).child('active').val() === true)`
             }
           }
         }
